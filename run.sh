@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -e
+
+# Check if projects directory is provided as a parameter
+# If not, use default ~/projects
+PROJECTS_DIR="${1:-$HOME/projects}"
+
+# Ensure the projects directory exists
+if [ ! -d "$PROJECTS_DIR" ]; then
+  echo "Warning: Projects directory $PROJECTS_DIR does not exist. Creating it."
+  mkdir -p "$PROJECTS_DIR"
+fi
+
+echo "Using projects directory: $PROJECTS_DIR"
+
+# Stop and remove existing container if it exists
+docker stop jb-gateway || true
+docker rm jb-gateway || true
+
+docker run -it -d --name jb-gateway \
+  -v ~/.jb-gateway/.ssh:/home/jb-gateway/.ssh/ \
+  -v ~/.jb-gateway/.config:/home/jb-gateway/.config/ \
+  -v ~/.jb-gateway/.cache:/home/jb-gateway/.cache/ \
+  -v ~/.jb-gateway/.java:/home/jb-gateway/.java/ \
+  -v ~/.jb-gateway/.local:/home/jb-gateway/.local/ \
+  -v ~/.jb-gateway/.gradle:/home/jb-gateway/.gradle/ \
+  -v ~/.jb-gateway/.jdks:/home/jb-gateway/.jdks/ \
+  -v "$PROJECTS_DIR":/home/jb-gateway/projects \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -p 1022:22 \
+  jb-gateway
+
+# Wait a moment for the container to initialize
+sleep 2
+
+# Display the SSH public key
+echo "======= SSH PUBLIC KEY ======="
+docker exec jb-gateway cat /home/jb-gateway/.ssh/id_rsa.pub
+echo "=============================="
+echo "Connect using: ssh -p 1022 jb-gateway@localhost"
+echo "Projects directory: $PROJECTS_DIR is mounted at /home/jb-gateway/projects"
