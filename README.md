@@ -14,7 +14,8 @@ JB Gateway creates a Docker container with SSH access, allowing you to:
 The current setup is optimized for:
 
 1. Java applications with the Gradle build system
-2. Running docker services
+2. Running and managing Docker containers and services from within the development environment
+3. The host machine is macOS
 
 ## Prerequisites
 
