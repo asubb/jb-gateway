@@ -94,7 +94,9 @@ This container is intended for development purposes only and is not secured for 
 
 ## Known Issues
 
-- If JetBrains Gateway fails to open or create an existing project with cache-related errors, try the following:
-    1. Stop the container
-    2. Remove the `~/.jb-gateway/.cache` directory
-    3. Restart the container and create the project again
+- If you experience any persistent issues with the cache, you can reset the cache volume:
+    ```bash
+    docker stop jb-gateway
+    docker volume rm jb-gateway-cache
+    ./run.sh
+    ```
