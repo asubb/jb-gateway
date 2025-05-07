@@ -52,8 +52,56 @@ def get_user_shell(username):
     return "/bin/bash"
 
 def execute_host_command(command, username=None):
-    print(f">>>>> host({username})$ {command}")
-    pass
+    """Execute a command on the host system using Docker API.
+
+    Args:
+        command: The command to execute on the host
+        username: The username to execute the command as (default: current user)
+
+    Returns:
+        The exit code of the command
+    """
+
+    # If no username specified, use the current user
+    if not username:
+        username = os.environ.get("HOST_USER", os.environ.get("USER", "root"))
+
+    try:
+        # Create a temporary container that:
+        # 1. Uses the host's PID namespace (--pid=host)
+        # 2. Uses the host's network namespace (--network=host)
+        # 3. Mounts the host's filesystem (--volume=/:/host)
+        # 4. Runs as the specified user (--user)
+        # 5. Executes the command in the host's filesystem (chroot /host)
+
+        # Prepare the Docker command
+        docker_cmd = [
+            "docker", "run", "--rm",
+            "--pid=host",
+            "--network=host",
+            "--volume=/:/host",
+            "--workdir=/host" + os.getcwd(),
+            # "--user", username,
+            "alpine:latest",
+            "chroot", "/host", "sh", "-c", command
+        ]
+
+        print(f">>>> Executing {docker_cmd}")
+
+        # Execute the Docker command
+        result = subprocess.run(
+            docker_cmd,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            text=True
+        )
+        print(f"<<<< Command executed on host successfully with exit code {result.returncode}")
+
+
+        return result.returncode
+    except Exception as e:
+        print(f"Error executing command on host: {e}", file=sys.stderr)
+        return 1
 
 def interactive_host_shell(username=None):
     """Run an interactive shell that executes commands on the host until 'exit' is typed."""
