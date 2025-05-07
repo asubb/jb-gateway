@@ -2,9 +2,13 @@
 
 set -e
 
-# Check if projects directory is provided as a parameter
+# Check if username is provided as a parameter
+# If not, use the current user from whoami
+HOST_USER="${1:-$(whoami)}"
+
+# Check if projects directory is provided as a second parameter
 # If not, use default ~/projects
-PROJECTS_DIR="${1:-$HOME/projects}"
+PROJECTS_DIR="${2:-$HOME/projects}"
 
 # Ensure the projects directory exists
 if [ ! -d "$PROJECTS_DIR" ]; then
@@ -12,6 +16,7 @@ if [ ! -d "$PROJECTS_DIR" ]; then
   mkdir -p "$PROJECTS_DIR"
 fi
 
+echo "Using host user: $HOST_USER"
 echo "Using projects directory: $PROJECTS_DIR"
 
 # Stop and remove existing container if it exists
@@ -22,6 +27,7 @@ docker rm jb-gateway || true
 docker volume create jb-gateway-cache
 
 docker run -it -d --name jb-gateway \
+  -e HOST_USER="$HOST_USER" \
   -v ~/.jb-gateway/.ssh:/home/jb-gateway/.ssh/ \
   -v ~/.jb-gateway/.config:/home/jb-gateway/.config/ \
   -v jb-gateway-cache:/home/jb-gateway/.cache \
@@ -46,3 +52,4 @@ docker exec jb-gateway cat /home/jb-gateway/.ssh/id_rsa.pub
 echo "=============================="
 echo "Connect using: ssh -p 1022 jb-gateway@localhost"
 echo "Projects directory: $PROJECTS_DIR is mounted at /home/jb-gateway/projects"
+echo "Host commands will run as user: $HOST_USER"

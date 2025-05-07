@@ -28,7 +28,11 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
 RUN mkdir -p /var/run/sshd
 
 # Create jb-gateway user with home directory
-RUN useradd -m -d /home/jb-gateway -s /bin/bash jb-gateway && \
+COPY host_command_executor.py /usr/local/bin/host_command_executor.py
+RUN chmod +x /usr/local/bin/host_command_executor.py && \
+    ln -s /usr/local/bin/host_command_executor.py /usr/local/bin/host-shell
+
+RUN useradd -m -d /home/jb-gateway jb-gateway && \
     echo "jb-gateway:password" | chpasswd && \
     usermod -aG sudo jb-gateway && \
     echo "jb-gateway ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
