@@ -32,7 +32,7 @@ COPY host_command_executor.py /usr/local/bin/host_command_executor.py
 RUN chmod +x /usr/local/bin/host_command_executor.py && \
     ln -s /usr/local/bin/host_command_executor.py /usr/local/bin/host-shell
 
-RUN useradd -m -d /home/jb-gateway jb-gateway && \
+RUN useradd -m -d /home/jb-gateway -s /bin/bash jb-gateway && \
     echo "jb-gateway:password" | chpasswd && \
     usermod -aG sudo jb-gateway && \
     echo "jb-gateway ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
