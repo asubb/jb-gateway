@@ -51,12 +51,13 @@ def get_user_shell(username):
     # Default to bash if we couldn't determine the shell
     return "/bin/bash"
 
-def execute_host_command(command, username=None):
+def execute_host_command(command, username=None, working_dir=None):
     """Execute a command on the host system using Docker API.
 
     Args:
         command: The command to execute on the host
         username: The username to execute the command as (default: current user)
+        working_dir: The working directory to execute the command in (default: current directory)
 
     Returns:
         The exit code of the command
@@ -65,6 +66,10 @@ def execute_host_command(command, username=None):
     # If no username specified, use the current user
     if not username:
         username = os.environ.get("HOST_USER", os.environ.get("USER", "root"))
+
+    # If no working directory specified, use the current directory
+    if working_dir is None:
+        working_dir = "/"
 
     try:
         # Create a temporary container that:
@@ -75,12 +80,13 @@ def execute_host_command(command, username=None):
         # 5. Executes the command in the host's filesystem (chroot /host)
 
         # Prepare the Docker command
+        command = "cd " + working_dir + " && " + command
         docker_cmd = [
             "docker", "run", "--rm",
             "--pid=host",
             "--network=host",
             "--volume=/:/host",
-            "--workdir=/host" + os.getcwd(),
+            # "--workdir=" + working_dir,
             # "--user", username,
             "alpine:latest",
             "chroot", "/host", "sh", "-c", command
@@ -113,6 +119,9 @@ def interactive_host_shell(username=None):
     user_shell = get_user_shell(username)
     shell_name = os.path.basename(user_shell)
 
+    # Initialize the working directory to the root directory
+    working_dir = "/"
+
     print("JB Gateway Host Command Executor")
     print(f"Interactive host shell mode for user: {username} (shell: {shell_name})")
     print("Type 'exit' to quit this mode")
@@ -122,15 +131,33 @@ def interactive_host_shell(username=None):
     while True:
         try:
             # Get command from user
-            command = input(f"host({username})$ ")
+            command = input(f"host({username})[{working_dir}]$ ")
 
             # Check for exit command
             if command.strip().lower() in ["exit", "quit"]:
                 print("Exiting host shell mode")
                 return 0
 
-            # Execute the command on the host
-            execute_host_command(command, username)
+            # Check for cd command
+            if command.strip().startswith("cd "):
+                # Extract the directory to change to
+                new_dir = command.strip()[3:].strip()
+
+                # Handle special cases
+                if not os.path.isabs(new_dir):
+                    # Convert relative path to absolute path
+                    new_dir = os.path.normpath(os.path.join(working_dir, new_dir))
+
+                # Check if the directory exists by trying to cd to it on the host
+                cd_result = execute_host_command(f"cd {new_dir}", username, working_dir)
+                if cd_result == 0:
+                    working_dir = new_dir
+                    print(f"Changed directory to: {working_dir}")
+                else:
+                    print(f"Directory not found: {new_dir}")
+            else:
+                # Execute the command on the host
+                execute_host_command(command, username, working_dir)
 
         except KeyboardInterrupt:
             print("\nUse 'exit' to quit")
