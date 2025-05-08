@@ -25,6 +25,13 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install extra useful things
+RUN apt-get update && \
+    apt-get install -yq \
+    telnet \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /var/run/sshd
 
 # Create jb-gateway user with home directory
