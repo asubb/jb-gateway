@@ -14,6 +14,7 @@ RUN apt-get update && \
     ca-certificates \
     gnupg \
     lsb-release \
+    host \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -36,11 +37,11 @@ RUN useradd -m -d /home/jb-gateway -s /bin/bash jb-gateway && \
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# Copy entrypoint script
+# Copy scripts
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY host-ssh.sh /usr/local/bin/host-ssh
+RUN chmod +x /entrypoint.sh /usr/local/bin/host-ssh
 
 EXPOSE 22
-
 
 CMD ["/entrypoint.sh"]

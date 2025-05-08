@@ -27,6 +27,23 @@ if [ -e /var/run/docker.sock ]; then
   chown jb-gateway:jb-gateway /var/run/docker.sock
 fi
 
+# Configure SSH client for the host connection
+mkdir -p /home/jb-gateway/.ssh/
+# Use HOST_USER environment variable if available, fallback to 'user'
+HOST_USER="${HOST_USER:-user}"
+echo "Configuring SSH for host user: $HOST_USER"
+
+cat > /home/jb-gateway/.ssh/config << EOF
+Host host.docker.internal
+    User ${HOST_USER}
+    Port 2022
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+EOF
+
+chown -R jb-gateway:jb-gateway /home/jb-gateway/.ssh/
+chmod 600 /home/jb-gateway/.ssh/config
+
 echo "Container initialization complete. Starting SSH service..."
 
 # Start SSH service in foreground

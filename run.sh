@@ -88,6 +88,10 @@ docker rm jb-gateway || true
 # Create named volume for cache if it doesn't exist
 docker volume create jb-gateway-cache
 
+# Get current host user
+HOST_USER="$(whoami)"
+echo "Host user: $HOST_USER"
+
 docker run -it -d --name jb-gateway \
   -v ~/.jb-gateway/.ssh:/home/jb-gateway/.ssh/ \
   -v ~/.jb-gateway/.config:/home/jb-gateway/.config/ \
@@ -98,6 +102,7 @@ docker run -it -d --name jb-gateway \
   -v ~/.jb-gateway/.jdks:/home/jb-gateway/.jdks/ \
   -v "$PROJECTS_DIR":/home/jb-gateway/projects \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  -e HOST_USER="$HOST_USER" \
   -p 1022:22 \
   jb-gateway
 
@@ -121,5 +126,6 @@ if [[ "$OSTYPE" == "darwin"* ]] && [ "$SSH_SERVER_RUNNING" = true ]; then
     echo "====== STANDALONE SSH SERVER ====="
     echo "Standalone SSH server is running on port $HOST_SSH_PORT"
     echo "Connect using: ssh -p $HOST_SSH_PORT $(whoami)@localhost"
+    echo "From within the container, use: host-ssh"
     echo "====================================="
 fi
