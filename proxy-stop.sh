@@ -16,6 +16,21 @@ if [ ! -d "$PID_DIR" ]; then
     exit 0
 fi
 
+# Check for tunnel monitor and stop it if running
+MONITOR_PID_FILE="$PID_DIR/monitor.pid"
+if [ -f "$MONITOR_PID_FILE" ]; then
+    monitor_pid=$(cat "$MONITOR_PID_FILE")
+    if ps -p "$monitor_pid" > /dev/null; then
+        echo -e "${GREEN}Stopping tunnel monitor (PID: $monitor_pid)...${NC}"
+        kill "$monitor_pid" 2>/dev/null || true
+        sleep 1
+    else
+        echo -e "${YELLOW}Tunnel monitor not running (PID: $monitor_pid)${NC}"
+    fi
+    rm -f "$MONITOR_PID_FILE"
+    echo -e "${GREEN}Tunnel monitor stopped.${NC}"
+fi
+
 # Check if there are any PID files
 PID_FILES=$(find "$PID_DIR" -name "proxy_*.pid" 2>/dev/null)
 
