@@ -45,7 +45,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "X11Forwarding no" >> "$SSH_CONFIG_FILE"
     echo "PrintMotd no" >> "$SSH_CONFIG_FILE"
     echo "AuthenticationMethods publickey,password keyboard-interactive" >> "$SSH_CONFIG_FILE"
-    
+
     # Create host keys if they don't exist
     if [ ! -f "$SSH_TEMP_DIR/ssh_host_rsa_key" ]; then
       ssh-keygen -t rsa -f "$SSH_TEMP_DIR/ssh_host_rsa_key" -N "" < /dev/null
@@ -92,6 +92,20 @@ docker volume create jb-gateway-cache
 HOST_USER="$(whoami)"
 echo "Host user: $HOST_USER"
 
+ADDITIONAL_VOLUMES=""
+# Check if host.env file exists and read additional directories to mount
+if [ -f "$(dirname "$0")/host.env" ]; then
+  source "$(dirname "$0")/host.env"
+  if [ ! -z "$HOST_DIRS" ]; then
+    echo "Mounting additional directories from host.env:"
+    IFS=',' read -ra DIR_MAPPINGS <<< "$HOST_DIRS"
+    for mapping in "${DIR_MAPPINGS[@]}"; do
+      echo "  - $mapping"
+      ADDITIONAL_VOLUMES="$ADDITIONAL_VOLUMES -v $mapping"
+    done
+  fi
+fi
+
 docker run -it -d --name jb-gateway \
   -v ~/.jb-gateway/.ssh:/home/jb-gateway/.ssh/ \
   -v ~/.jb-gateway/.config:/home/jb-gateway/.config/ \
@@ -103,6 +117,7 @@ docker run -it -d --name jb-gateway \
   -v "$PROJECTS_DIR":/home/jb-gateway/projects \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e HOST_USER="$HOST_USER" \
+  $ADDITIONAL_VOLUMES \
   -p 1022:22 \
   jb-gateway
 
