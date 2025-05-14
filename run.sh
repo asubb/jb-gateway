@@ -2,15 +2,8 @@
 
 set -e
 
-# Check if projects directory is provided as a parameter
-# If not, use default ~/projects
-PROJECTS_DIR="${1:-$HOME/projects}"
-
-# Ensure the projects directory exists
-if [ ! -d "$PROJECTS_DIR" ]; then
-  echo "Warning: Projects directory $PROJECTS_DIR does not exist. Creating it."
-  mkdir -p "$PROJECTS_DIR"
-fi
+# Default projects directory (will be overridden by host.env if present)
+DEFAULT_PROJECTS_DIR="${1:-$HOME/projects}"
 
 HOST_SSH_PORT=2022
 # Check for standalone SSH server and install if needed (macOS specific)
@@ -79,8 +72,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   fi
 fi
 
-echo "Using projects directory: $PROJECTS_DIR"
-
 # Stop and remove existing container if it exists
 docker stop jb-gateway || true
 docker rm jb-gateway || true
@@ -105,6 +96,17 @@ if [ -f "$(dirname "$0")/host.env" ]; then
     done
   fi
 fi
+
+# Set PROJECTS_DIR from host.env if defined, otherwise use the default
+PROJECTS_DIR="${PROJECTS_DIR:-$DEFAULT_PROJECTS_DIR}"
+
+# Ensure the projects directory exists
+if [ ! -d "$PROJECTS_DIR" ]; then
+  echo "Warning: Projects directory $PROJECTS_DIR does not exist. Creating it."
+  mkdir -p "$PROJECTS_DIR"
+fi
+
+echo "Using projects directory: $PROJECTS_DIR"
 
 docker run -it -d --name jb-gateway \
   -v ~/.jb-gateway/.ssh:/home/jb-gateway/.ssh/ \
