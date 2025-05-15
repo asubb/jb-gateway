@@ -103,11 +103,10 @@ if [ -f "$(dirname "$0")/host.env" ]; then
     echo "Setting additional environment variables from host.env:"
     # Replace ~ with the actual container home directory
     CONTAINER_ENV_PROCESSED=$(echo "$CONTAINER_ENV" | sed 's/\~/\/home\/jb-gateway/g')
-    echo "  - $CONTAINER_ENV_PROCESSED"
 
     # Split the environment variables and add each one separately
     for env_var in $CONTAINER_ENV_PROCESSED; do
-      echo "    - $env_var"
+      echo "  - $env_var"
       ADDITIONAL_ENV="$ADDITIONAL_ENV -e $env_var"
     done
   fi
