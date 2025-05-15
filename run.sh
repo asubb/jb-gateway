@@ -84,7 +84,9 @@ HOST_USER="$(whoami)"
 echo "Host user: $HOST_USER"
 
 ADDITIONAL_VOLUMES=""
-# Check if host.env file exists and read additional directories to mount
+ADDITIONAL_ENV=""
+
+# Check if host.env file exists and read additional directories to mount and environment variables
 if [ -f "$(dirname "$0")/host.env" ]; then
   source "$(dirname "$0")/host.env"
   if [ ! -z "$HOST_DIRS" ]; then
@@ -93,6 +95,20 @@ if [ -f "$(dirname "$0")/host.env" ]; then
     for mapping in "${DIR_MAPPINGS[@]}"; do
       echo "  - $mapping"
       ADDITIONAL_VOLUMES="$ADDITIONAL_VOLUMES -v $mapping"
+    done
+  fi
+
+  # Process container environment variables if defined
+  if [ ! -z "$CONTAINER_ENV" ]; then
+    echo "Setting additional environment variables from host.env:"
+    # Replace ~ with the actual container home directory
+    CONTAINER_ENV_PROCESSED=$(echo "$CONTAINER_ENV" | sed 's/\~/\/home\/jb-gateway/g')
+    echo "  - $CONTAINER_ENV_PROCESSED"
+
+    # Split the environment variables and add each one separately
+    for env_var in $CONTAINER_ENV_PROCESSED; do
+      echo "    - $env_var"
+      ADDITIONAL_ENV="$ADDITIONAL_ENV -e $env_var"
     done
   fi
 fi
@@ -120,6 +136,7 @@ docker run -it -d --name jb-gateway \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e HOST_USER="$HOST_USER" \
   $ADDITIONAL_VOLUMES \
+  $ADDITIONAL_ENV \
   -p 1022:22 \
   jb-gateway
 
