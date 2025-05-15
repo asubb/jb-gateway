@@ -56,6 +56,34 @@ Example:
 ./run.sh ~/my-projects
 ```
 
+### Container Configuration with host.env
+
+You can customize the container environment by creating a `host.env` file in the project root. This file allows you to configure:
+
+1. **PROJECTS_DIR**: The projects directory to mount in the container
+   ```
+   PROJECTS_DIR=/path/to/your/projects
+   ```
+   If not specified, defaults to `$HOME/projects` or the directory provided as command-line argument to `run.sh`.
+
+2. **HOST_DIRS**: Additional directories to mount from host to container
+   ```
+   HOST_DIRS=/path/on/host:/path/in/container,/another/path/on/host:/another/path/in/container
+   ```
+   Each mapping should be in the format: `/host/path:/container/path`
+   Multiple mappings should be separated by commas.
+
+3. **CONTAINER_ENV**: Global environment variables to set in the container
+   ```
+   CONTAINER_ENV="VAR1=value1 VAR2=value2 VAR3=~/path"
+   ```
+   Use `~` to reference the container user's home directory (`/home/jb-gateway`).
+
+A template file `host.env.example` is provided as a reference. Copy it to `host.env` and customize as needed:
+```
+cp host.env.example host.env
+```
+
 ### Connecting to the Container
 
 After starting the container, you can connect to it using SSH:
