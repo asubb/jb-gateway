@@ -79,6 +79,12 @@ You can customize the container environment by creating a `host.env` file in the
    ```
    Use `~` to reference the container user's home directory (`/home/jb-gateway`).
 
+4. **DISABLE_HOST_SSH**: Option to disable the installation of the HOST SSH server on macOS
+   ```
+   DISABLE_HOST_SSH=true
+   ```
+   By default, on macOS systems, the script installs a standalone SSH server on port 2022 to allow the container to connect back to the host machine. Set this to `true` to disable this feature.
+
 A template file `host.env.example` is provided as a reference. Copy it to `host.env` and customize as needed:
 ```
 cp host.env.example host.env

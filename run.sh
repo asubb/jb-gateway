@@ -7,7 +7,7 @@ DEFAULT_PROJECTS_DIR="${1:-$HOME/projects}"
 
 HOST_SSH_PORT=2022
 # Check for standalone SSH server and install if needed (macOS specific)
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [[ "$OSTYPE" == "darwin"* ]] && [[ "${DISABLE_HOST_SSH}" != "true" ]]; then
   echo "Checking for standalone SSH server..."
 
   # Check if 'minissh' is installed via brew (or install your preferred lightweight SSH server)
