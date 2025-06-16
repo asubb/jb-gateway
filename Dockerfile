@@ -15,6 +15,8 @@ RUN apt-get update && \
     gnupg \
     lsb-release \
     host \
+    samba \
+    samba-common \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -37,11 +39,13 @@ RUN useradd -m -d /home/jb-gateway -s /bin/bash jb-gateway && \
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# Copy scripts
+# Copy scripts and configuration files
 COPY entrypoint.sh /entrypoint.sh
 COPY host-ssh.sh /usr/local/bin/host-ssh
-RUN chmod +x /entrypoint.sh /usr/local/bin/host-ssh
+COPY start-services.sh /usr/local/bin/start-services.sh
+COPY smb.conf /etc/samba/smb.conf
+RUN chmod +x /entrypoint.sh /usr/local/bin/host-ssh /usr/local/bin/start-services.sh
 
-EXPOSE 22
+EXPOSE 22 139 445
 
 CMD ["/entrypoint.sh"]

@@ -45,9 +45,10 @@ chown -R jb-gateway:jb-gateway /home/jb-gateway/.ssh/
 chmod 600 /home/jb-gateway/.ssh/config
 
 # Create a script to set environment variables for jb-gateway user
-mkdir -p /home/jb-gateway/.config
-env | grep -v "PATH\|HOME\|USER\|SHELL\|PWD\|LOGNAME\|_\|TERM\|SHLVL\|HOSTNAME\|SSH_\|MAIL\|LANG\|LANGUAGE\|LC_" > /home/jb-gateway/.config/container_env_vars
-sed -i 's/^/export /' /home/jb-gateway/.config/container_env_vars
+# TODO that doesn't work for some reason
+#mkdir -p /home/jb-gateway/.config
+#env | grep -v "PATH\|HOME\|USER\|SHELL\|PWD\|LOGNAME\|_\|TERM\|SHLVL\|HOSTNAME\|SSH_\|MAIL\|LANG\|LANGUAGE\|LC_" > /home/jb-gateway/.config/container_env_vars
+#sed -i 's/^/export /' /home/jb-gateway/.config/container_env_vars
 
 # Add environment variables to user's .bashrc and .profile
 for rc_file in /home/jb-gateway/.bashrc /home/jb-gateway/.profile; do
@@ -74,7 +75,7 @@ done
 chown jb-gateway:jb-gateway /home/jb-gateway/.config/container_env_vars
 chmod 644 /home/jb-gateway/.config/container_env_vars
 
-echo "Container initialization complete. Starting SSH service..."
+echo "Container initialization complete. Starting services..."
 
-# Start SSH service in foreground
-exec /usr/sbin/sshd -D
+# Execute the service manager script
+exec /usr/local/bin/start-services.sh

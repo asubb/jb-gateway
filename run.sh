@@ -137,6 +137,8 @@ docker run -it -d --name jb-gateway \
   $ADDITIONAL_VOLUMES \
   $ADDITIONAL_ENV \
   -p 1022:22 \
+  -p 139:139 \
+  -p 445:445 \
   jb-gateway
 
 # Change ownership of the cache volume to jb-gateway user
