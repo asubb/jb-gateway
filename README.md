@@ -330,6 +330,144 @@ You can override the default host by specifying a host directly in the command l
 
 The SMB share is protected with the same credentials as the SSH access. For production environments, consider changing the default password.
 
+## Directory Synchronization
+
+JB Gateway includes bidirectional directory synchronization tools that allow you to keep two directories in sync. This is useful for synchronizing local and remote project directories.
+
+### Using the Kotlin Application (sync-dirs)
+
+The Kotlin application synchronizes two directories bidirectionally, logging all changes. If there is a conflict (a file has been modified in both directories), it will prompt the user and show the diff.
+
+#### Building and Running the Application
+
+The application comes with a wrapper script that handles building and running the application. To use it:
+
+```bash
+./sync-dirs <dir1> <dir2>
+```
+
+Example:
+```bash
+./sync-dirs ~/projects/local ~/projects/remote
+```
+
+If you prefer to build and run the application manually:
+
+1. Build the application:
+   ```bash
+   cd sync
+   ./gradlew build
+   ```
+
+2. Run the application:
+   ```bash
+   java -jar build/libs/sync-dirs-1.0-SNAPSHOT.jar <dir1> <dir2>
+   ```
+
+#### Monitoring Mode
+
+The application can also run in monitoring mode, continuously watching for changes and synchronizing the directories at regular intervals:
+
+```bash
+./sync-dirs --monitor [--interval SECONDS] <dir1> <dir2>
+```
+
+Options:
+- `--monitor` (or `-m`): Run in monitoring mode, continuously watching for changes
+- `--interval SECONDS` (or `-i SECONDS`): Set the interval between checks in monitoring mode (default: 10 seconds)
+
+Example:
+```bash
+./sync-dirs --monitor --interval 30 ~/projects/local ~/projects/remote
+```
+
+This will synchronize the directories every 30 seconds until you press Ctrl+C to stop the monitoring.
+
+#### Ignoring Files and Directories
+
+You can specify files and directories to ignore during synchronization using glob patterns:
+
+```bash
+./sync-dirs --ignore 'pattern1,pattern2,...' <dir1> <dir2>
+```
+
+Options:
+- `--ignore PATTERNS` (or `-g PATTERNS`): Comma-separated list of glob patterns to ignore
+- `--log-ignored` (or `-l`): Log ignored files (by default, ignored files are not logged)
+
+Example:
+```bash
+./sync-dirs --ignore '*.tmp,*.log,build/,node_modules/' ~/projects/local ~/projects/remote
+```
+
+This will synchronize the directories while ignoring any files or directories that match the specified patterns.
+
+If you want to see which files are being ignored during synchronization, you can use the `--log-ignored` option:
+
+```bash
+./sync-dirs --ignore '*.tmp,*.log,build/,node_modules/' --log-ignored ~/projects/local ~/projects/remote
+```
+
+#### Configuration File
+
+Instead of specifying options on the command line, you can use a configuration file:
+
+```bash
+./sync-dirs --config <config_file>
+```
+
+Options:
+- `--config FILE` (or `-c FILE`): Path to the configuration file
+
+Example:
+```bash
+./sync-dirs --config sync-dirs.conf
+```
+
+The configuration file should be in a simple key-value format:
+
+```
+# Source and destination directories
+DIR1=/path/to/source/directory
+DIR2=/path/to/destination/directory
+
+# Files and directories to ignore (optional)
+IGNORE=*.tmp,*.log,build/,node_modules/,*.bak
+
+# Monitoring mode (optional, default: false)
+MONITOR=false
+
+# Interval in seconds for monitoring mode (optional, default: 10)
+INTERVAL=30
+
+# Log ignored files (optional, default: false)
+LOG_IGNORED_FILES=false
+```
+
+A template file `sync-dirs.conf.example` is provided as a reference. Copy it to `sync-dirs.conf` and customize as needed:
+```bash
+cp sync-dirs.conf.example sync-dirs.conf
+```
+
+#### Features
+
+- Bidirectional synchronization: Changes from both directories are synchronized
+- Conflict detection and resolution: When a file has been modified in both directories, the application shows a diff and prompts for resolution
+- Handling of deleted files: The application detects files that have been deleted in one directory and prompts for action
+- Continuous monitoring: Option to run in monitoring mode, continuously watching for changes
+- Ignore patterns: Ability to specify files and directories to ignore during synchronization
+- Configuration file: Support for reading options from a configuration file
+- Detailed logging: All actions are logged to both the console and a log file
+- Colored output: Different types of messages are color-coded for better readability
+
+#### Log Files
+
+The application creates log files in the `~/.sync-dirs/` directory with timestamps in the filename. These logs contain detailed information about all synchronization actions.
+
+### Using the Bash Script (sync-dirs.sh)
+
+For backward compatibility, the original bash script `sync-dirs.sh` is still available with the same functionality as the Kotlin application. See the Kotlin application documentation above for usage details.
+
 ## Known Issues
 
 - If you experience any persistent issues with the cache, you can reset the cache volume:

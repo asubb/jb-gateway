@@ -1,0 +1,19 @@
+# Example configuration file for sync-dirs.sh
+# This file demonstrates how to configure the directory synchronization script
+
+# Source and destination directories (required)
+DIR1=/path/to/source/directory
+DIR2=/path/to/destination/directory
+
+# Files and directories to ignore (optional)
+# Use glob patterns, separate multiple patterns with commas
+IGNORE=*.tmp,*.log,build/,node_modules/,*.bak
+
+# Monitoring mode (optional, default: false)
+MONITOR=false
+
+# Interval in seconds for monitoring mode (optional, default: 10)
+INTERVAL=30
+
+# Log ignored files (optional, default: false)
+LOG_IGNORED_FILES=false

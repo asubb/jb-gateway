@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# sync-dirs - Wrapper script for the sync-dirs Kotlin application
+#
+# This script builds the application if necessary and then runs it with the provided arguments.
+#
+# Usage: ./sync-dirs [options] <dir1> <dir2>
+
+# Get the directory of this script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Check if the JAR file exists
+JAR_FILE="$SCRIPT_DIR/build/libs/sync-dirs-1.0-SNAPSHOT.jar"
+if [ ! -f "$JAR_FILE" ]; then
+    echo "Building the application..."
+    cd "$SCRIPT_DIR" && ./gradlew build
+    
+    # Check if the build was successful
+    if [ $? -ne 0 ]; then
+        echo "Build failed. Please check the error messages above."
+        exit 1
+    fi
+fi
+
+# Run the application with the provided arguments
+java -jar "$JAR_FILE" "$@"
