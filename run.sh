@@ -147,20 +147,38 @@ docker exec jb-gateway chown -R jb-gateway:jb-gateway /home/jb-gateway/.cache
 # Wait a moment for the container to initialize
 sleep 2
 
-# Display the SSH public key
-echo "======= CONTAINER USER SSH PUBLIC KEY ======="
-echo "You need to add it to your Github (or any other) account make sure it can push changes"
+# Display connection information
+echo ""
+echo "🚀 JetBrains Gateway container is ready!"
+echo ""
+echo "🔑 SSH PUBLIC KEY (Container User):"
+echo "------------------------------------"
 docker exec jb-gateway cat /home/jb-gateway/.ssh/id_rsa.pub
-echo "=============================="
-echo "Connect to Docker container using: ssh -p 1022 jb-gateway@localhost"
-echo "Projects directory: $PROJECTS_DIR is mounted at /home/jb-gateway/projects"
+echo "------------------------------------"
+echo "👉 Add this key to your GitHub/GitLab account to enable git operations."
+echo ""
+echo "🖥️  HOW TO CONNECT:"
+echo "------------------"
+echo "1. JetBrains Gateway (Recommended):"
+echo "   - Host: localhost"
+echo "   - Port: 1022"
+echo "   - User: jb-gateway"
+echo ""
+echo "2. Terminal SSH:"
+echo "   ssh -p 1022 jb-gateway@localhost"
+echo ""
+echo "📂 PROJECTS:"
+echo "-----------"
+echo "Host: $PROJECTS_DIR"
+echo "Container: /home/jb-gateway/projects"
 
 # Display info about the standalone SSH server
 if [[ "$OSTYPE" == "darwin"* ]] && [ "$SSH_SERVER_RUNNING" = true ]; then
     echo ""
-    echo "====== STANDALONE SSH SERVER ====="
-    echo "Standalone SSH server is running on port $HOST_SSH_PORT"
+    echo "🔧 STANDALONE SSH SERVER (Host):"
+    echo "-------------------------------"
+    echo "Running on port: $HOST_SSH_PORT"
     echo "Connect using: ssh -p $HOST_SSH_PORT $(whoami)@localhost"
-    echo "From within the container, use: host-ssh"
-    echo "====================================="
+    echo "Usage within container: use 'host-ssh' command"
+    echo "-------------------------------"
 fi
