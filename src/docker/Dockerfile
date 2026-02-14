@@ -17,6 +17,12 @@ RUN apt-get update && \
     host \
     samba \
     samba-common \
+    zip \
+    unzip \
+    htop \
+    telnet \
+    jq \
+    yq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -38,6 +44,12 @@ RUN useradd -m -d /home/jb-gateway -s /bin/bash jb-gateway && \
 
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Install SDKMAN! for jb-gateway user
+USER jb-gateway
+RUN curl -s "https://get.sdkman.io" | bash && \
+    bash -c "source /home/jb-gateway/.sdkman/bin/sdkman-init.sh && sdk version"
+USER root
 
 # Copy scripts and configuration files
 COPY entrypoint.sh /entrypoint.sh
