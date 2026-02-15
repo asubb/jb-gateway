@@ -29,6 +29,23 @@ RUN apt-get update && \
     x11vnc \
     xvfb \
     fluxbox \
+    libgtk-4-1 \
+    libgraphene-1.0-0 \
+    libvpx9 \
+    libevent-2.1-7 \
+    libgstreamer1.0-0 \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    libgstreamer-plugins-bad1.0-0 \
+    libflite1 \
+    libavif16 \
+    libharfbuzz-icu0 \
+    libenchant-2-2 \
+    libhyphen0 \
+    libwayland-server0 \
+    libmanette-0.2-0 \
+    libx264-164 \
+    libwoff1 \
     && apt-get install -y --no-install-recommends software-properties-common \
     && add-apt-repository -y ppa:xtradeb/apps \
     && apt-get update && apt-get install -y chromium \
