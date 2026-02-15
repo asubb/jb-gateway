@@ -75,6 +75,11 @@ done
 chown jb-gateway:jb-gateway /home/jb-gateway/.config/container_env_vars
 chmod 644 /home/jb-gateway/.config/container_env_vars
 
+# Configure Samba projects path
+CONTAINER_PROJECTS_PATH="${CONTAINER_PROJECTS_PATH:-/home/jb-gateway/projects}"
+echo "Configuring Samba projects path: $CONTAINER_PROJECTS_PATH"
+sed -i "s|path = /home/jb-gateway/projects|path = $CONTAINER_PROJECTS_PATH|" /etc/samba/smb.conf
+
 echo "Container initialization complete. Starting services..."
 
 # Execute the service manager script

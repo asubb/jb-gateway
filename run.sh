@@ -115,6 +115,10 @@ fi
 # Set PROJECTS_DIR from host.env if defined, otherwise use the default
 PROJECTS_DIR="${PROJECTS_DIR:-$DEFAULT_PROJECTS_DIR}"
 
+# Set container projects directory (default to 'projects' inside HOME)
+CONTAINER_PROJECTS_DIR_NAME="${CONTAINER_PROJECTS_DIR_NAME:-projects}"
+CONTAINER_PROJECTS_PATH="/home/jb-gateway/$CONTAINER_PROJECTS_DIR_NAME"
+
 # Ensure the projects directory exists
 if [ ! -d "$PROJECTS_DIR" ]; then
   echo "Warning: Projects directory $PROJECTS_DIR does not exist. Creating it."
@@ -132,9 +136,10 @@ docker run -it -d --name jb-gateway \
   -v ~/.jb-gateway/.gradle:/home/jb-gateway/.gradle/ \
   -v ~/.jb-gateway/.jdks:/home/jb-gateway/.jdks/ \
   -v ~/.jb-gateway/.sdkman/candidates:/home/jb-gateway/.sdkman/candidates \
-  -v "$PROJECTS_DIR":/home/jb-gateway/projects \
+  -v "$PROJECTS_DIR":"$CONTAINER_PROJECTS_PATH" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e HOST_USER="$HOST_USER" \
+  -e CONTAINER_PROJECTS_PATH="$CONTAINER_PROJECTS_PATH" \
   $ADDITIONAL_VOLUMES \
   $ADDITIONAL_ENV \
   -p 1022:22 \
@@ -179,7 +184,7 @@ echo ""
 echo "📂 PROJECTS:"
 echo "-----------"
 echo "Host: $PROJECTS_DIR"
-echo "Container: /home/jb-gateway/projects"
+echo "Container: $CONTAINER_PROJECTS_PATH"
 
 # Display info about the standalone SSH server
 if [[ "$OSTYPE" == "darwin"* ]] && [ "$SSH_SERVER_RUNNING" = true ]; then
