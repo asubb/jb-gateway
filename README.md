@@ -1,23 +1,31 @@
-# JB Gateway
+# JB Gateway: Remote Development & AI Agent Sandbox
 
-A Docker-based SSH gateway container that provides a development environment with your projects directory mounted
-inside, specifically designed to work with JetBrains Gateway.
+A secure, Docker-based environment for remote development and sandboxing AI agents. This gateway provides a controlled
+workspace with your projects directory mounted inside, specifically designed to limit the blast radius of AI agents and
+protect your host system.
 
 ## Description
 
 ![JB Gateway architecture](.assets/architecture.png)
 
-JB Gateway creates a Docker container with SSH access, allowing you to:
+JB Gateway creates an isolated Docker container that serves as a secure boundary for both human developers and AI
+agents. It is designed to:
 
-- Connect to a consistent development environment via SSH
-- Access your local projects directory inside the container
-- Use common development tools (git, curl, htop, telnet, jq, yq, etc.)
-- Use SDKMAN! to manage Java versions and other SDKs
-- Run Docker commands from within the container
-- Persist SSH keys and configuration between container restarts
-- Provide a tunnel for JetBrains Gateway to access your project files remotely
-- Connect back to your host machine using the `host-ssh` command
-- Access Chrome remotely through a plain web browser via noVNC
+- **Sandbox AI Agents**: Provide a restricted environment for AI agents to operate, ensuring they cannot access or
+  modify files outside the designated project areas.
+- **Limit Blast Radius**: Use Docker isolation to prevent accidental or malicious actions from affecting the host system
+  or sensitive data.
+- **Remote Development**: Connect to a consistent development environment via SSH, fully compatible with JetBrains
+  Gateway.
+- **Controlled Access**: Access your local projects directory inside the container while keeping the rest of your host
+  system unreachable.
+- **Tool-Rich Environment**: Use common development tools (git, curl, htop, telnet, jq, yq, etc.) and SDKMAN! within the
+  sandbox.
+- **Docker-in-Docker Capability**: Run and manage Docker services from within the isolated environment.
+- **Secure Connectivity**: Persist SSH keys and provide secure tunnels for remote access.
+- **Host Protection**: Use the `host-ssh` command for explicitly authorized connections back to the host, while
+  maintaining the primary sandbox boundary.
+- **Remote Visual Debugging**: Access Chrome via noVNC for web-based tools and debugging.
 
 The current setup is optimized for:
 
@@ -408,7 +416,8 @@ environment.
 
 ### SMB Configuration
 
-The script reads configuration from `client/.env` or `server/host.env` files if they exist. You can customize the following
+The script reads configuration from `client/.env` or `server/host.env` files if they exist. You can customize the
+following
 parameters:
 
 - `SMB_HOST`: The default hostname or IP address of the SMB server (default: localhost)
