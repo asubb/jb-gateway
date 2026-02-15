@@ -139,6 +139,8 @@ docker run -it -d --name jb-gateway \
   -p 1022:22 \
   -p 139:139 \
   -p 445:445 \
+  -p 6080:6080 \
+  -p 9222:9222 \
   jb-gateway
 
 # Change ownership of the cache volume to jb-gateway user
@@ -166,6 +168,12 @@ echo "   - User: jb-gateway"
 echo ""
 echo "2. Terminal SSH:"
 echo "   ssh -p 1022 jb-gateway@localhost"
+echo ""
+echo "3. Remote Chrome (noVNC):"
+echo "   http://localhost:6080/vnc.html"
+echo ""
+echo "4. Chromium Debug Port:"
+echo "   localhost:9222"
 echo ""
 echo "📂 PROJECTS:"
 echo "-----------"

@@ -23,6 +23,15 @@ RUN apt-get update && \
     telnet \
     jq \
     yq \
+    wget \
+    novnc \
+    websockify \
+    x11vnc \
+    xvfb \
+    fluxbox \
+    && apt-get install -y --no-install-recommends software-properties-common \
+    && add-apt-repository -y ppa:xtradeb/apps \
+    && apt-get update && apt-get install -y chromium \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -58,6 +67,6 @@ COPY start-services.sh /usr/local/bin/start-services.sh
 COPY smb.conf /etc/samba/smb.conf
 RUN chmod +x /entrypoint.sh /usr/local/bin/host-ssh /usr/local/bin/start-services.sh
 
-EXPOSE 22 139 445
+EXPOSE 22 139 445 6080 9222
 
 CMD ["/entrypoint.sh"]

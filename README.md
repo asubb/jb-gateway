@@ -15,6 +15,7 @@ JB Gateway creates a Docker container with SSH access, allowing you to:
 - Persist SSH keys and configuration between container restarts
 - Provide a tunnel for JetBrains Gateway to access your project files remotely
 - Connect back to your host machine using the `host-ssh` command
+- Access Chrome remotely through a plain web browser via noVNC
 
 The current setup is optimized for:
 
@@ -380,7 +381,31 @@ You can also mount a share from a specific host by providing the hostname or IP 
 
 The script will automatically create the mount point directory if it doesn't exist.
 
+### Remote Chrome Access
+
+The container includes a remote Chrome instance that can be accessed via a web browser using noVNC.
+
+#### How to Access
+
+1. Ensure the container is running.
+2. Open your web browser and navigate to:
+   ```
+   http://localhost:6080/vnc.html
+   ```
+3. Click "Connect".
+4. You will see a Fluxbox desktop environment with Chromium running.
+
+This is useful for debugging web applications or accessing web-based tools from within the container's network environment.
+
 #### Configuration
+
+- **Port**: 6080 (noVNC)
+- **VNC Port**: 5900 (Internal)
+- **Chromium Debug Port**: 9222
+- **Display**: :1
+- **Screen Resolution**: 1920x1080x24
+
+### SMB Configuration
 
 The script reads configuration from `.env` or `host.env` files if they exist. You can customize the following
 parameters:
