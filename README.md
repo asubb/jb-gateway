@@ -5,6 +5,8 @@ inside, specifically designed to work with JetBrains Gateway.
 
 ## Description
 
+![JB Gateway architecture](.assets/architecture.png)
+
 JB Gateway creates a Docker container with SSH access, allowing you to:
 
 - Connect to a consistent development environment via SSH
