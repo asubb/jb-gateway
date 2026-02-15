@@ -27,122 +27,120 @@ The current setup is optimized for:
 
 ## Prerequisites
 
-- Docker installed on your system
-- Bash shell
-- sshpass (required for password authentication with the proxy)
+### Server-side Prerequisites
+
+- **Docker** installed on your system
+- **Bash shell**
+
+### Client-side Prerequisites
+
+- **Bash shell**
+- **sshpass** (required for password authentication with the proxy)
     - On Ubuntu/Debian: `sudo apt-get install sshpass`
     - On macOS: `brew install hudochenkov/sshpass/sshpass`
 
 ## Installation
 
 1. Clone this repository:
-   ```
+   ```shell
    git clone <repository-url>
    cd jb-gateway
    ```
 
 2. Build the Docker image:
-   ```
-   ./build.sh
-   ```
+   ```shell
+   ./server/build.sh
+    ```
 
 ## Usage
 
-### Starting the Container
+This project is divided into two parts: the **server** (where the Docker container runs) and the **client** (how you
+connect to it and use its services).
 
-Run the container with:
+### Server-side Usage (Host where Docker runs)
 
-```
-./run.sh [PROJECTS_DIRECTORY]
-```
+#### 1. Build the Docker image
 
-Where:
-
-- `PROJECTS_DIRECTORY` is an optional parameter specifying the directory to mount (defaults to ~/projects)
-
-Example:
-
-```
-./run.sh ~/my-projects
+```bash
+./server/build.sh
 ```
 
-### Container Configuration with host.env
+#### 2. Start the container
 
-You can customize the container environment by creating a `host.env` file in the project root. This file allows you to
-configure:
-
-1. **PROJECTS_DIR**: The projects directory to mount in the container
-   ```
-   PROJECTS_DIR=/path/to/your/projects
-   ```
-   If not specified, defaults to `$HOME/projects` or the directory provided as command-line argument to `run.sh`.
-
-2. **HOST_DIRS**: Additional directories to mount from host to container
-   ```
-   HOST_DIRS=/path/on/host:/path/in/container,/another/path/on/host:/another/path/in/container
-   ```
-   Each mapping should be in the format: `/host/path:/container/path`
-   Multiple mappings should be separated by commas.
-
-3. **CONTAINER_ENV**: Global environment variables to set in the container
-   ```
-   CONTAINER_ENV="VAR1=value1 VAR2=value2 VAR3=~/path"
-   ```
-   Use `~` to reference the container user's home directory (`/home/jb-gateway`).
-
-4. **DISABLE_HOST_SSH**: Option to disable the installation of the HOST SSH server on macOS
-   ```
-   DISABLE_HOST_SSH=true
-   ```
-   By default, on macOS systems, the script installs a standalone SSH server on port 2022 to allow the container to
-   connect back to the host machine. Set this to `true` to disable this feature.
-
-A template file `host.env.example` is provided as a reference. Copy it to `host.env` and customize as needed:
-
-```
-cp host.env.example host.env
+```bash
+./server/run.sh
 ```
 
-### Connecting to the Container
+By default, this mounts `~/projects` from your host to `/home/jb-gateway/projects` in the container.
 
-After starting the container, you can connect to it using SSH:
+#### 3. Stop the container
 
+```bash
+./server/stop.sh
 ```
+
+### Client-side Usage (Connecting to the Gateway)
+
+#### 1. Connecting via SSH
+
+You can connect to the container using standard SSH:
+
+```bash
 ssh -p 1022 jb-gateway@localhost
 ```
 
-Default credentials:
+* **Username**: `jb-gateway`
+* **Password**: `password`
 
-- Username: jb-gateway
-- Password: password
+#### 2. Using with JetBrains Gateway
 
-### SSH Keys
+1. Open JetBrains Gateway.
+2. Select **Connect to SSH**.
+3. Use `localhost` on port `1022`, username `jb-gateway`, password `password`.
+4. Open your project from `/home/jb-gateway/projects/`.
 
-The container generates SSH keys on the first run. These keys are persisted in the `~/.jb-gateway/.ssh/` directory on
-your host machine.
+#### 3. Accessing Remote Chrome (noVNC)
 
-## Using with JetBrains Gateway
+Open your web browser and navigate to:
 
-JetBrains Gateway is a tool that allows you to connect to remote development environments from your local JetBrains
-IDEs. This container is specifically designed to work as a remote development environment for JetBrains Gateway.
+```
+http://localhost:6080/vnc.html
+```
 
-### Connecting with JetBrains Gateway
+Click **Connect** to see the remote desktop.
 
-1. Start the container using the instructions above
-2. Open JetBrains Gateway on your local machine
-3. Select the "Connect to SSH" option
-4. Enter the following connection details:
-    - Host: localhost
-    - Port: 1022
-    - Username: jb-gateway
-    - Password: password
-5. Select the project you want to open from the `/home/jb-gateway/projects/` directory
-6. JetBrains Gateway will establish a secure tunnel to your container and open the project in your preferred IDE
+#### 4. Accessing Files via SMB
 
-JetBrains Gateway will use the SSH connection to create a tunnel to your project files, allowing you to develop remotely
-while using your local IDE.
+You can mount the projects directory as a network share:
 
-## SDK Management with SDKMAN!
+- **macOS**: `smb://localhost/projects`
+- **Windows**: `\\localhost\projects`
+- **Credentials**: Username `jb-gateway`, Password `password`
+
+---
+
+## Detailed Features & Configuration
+
+### Container Configuration (host.env)
+
+You can customize the container environment by creating a `host.env` file in the `server/` directory.
+
+A template file `host.env.example` is provided as a reference. Copy it to `host.env` and customize as needed:
+
+```bash
+cp server/host.env.example server/host.env
+```
+
+Key configuration options:
+
+- `PROJECTS_DIR`: The projects directory to mount (defaults to `~/projects`).
+- `HOST_DIRS`: Additional directories to mount (format: `/host/path:/container/path`).
+- `CONTAINER_ENV`: Global environment variables to set in the container.
+- `DISABLE_HOST_SSH`: Set to `true` to disable the back-tunnel SSH server on macOS.
+
+---
+
+### SDK Management with SDKMAN!
 
 The container comes with [SDKMAN!](https://sdkman.io/) pre-installed for the `jb-gateway` user. This allows you to
 easily install and switch between different versions of Java, Gradle, Maven, and other SDKs.
@@ -182,7 +180,7 @@ This is particularly useful if you need to run commands on your host machine whi
 This container is intended for development purposes only and is not secured for production use. The default password is
 hardcoded and SSH root login is enabled.
 
-## Using the HTTP Proxy
+### Using the HTTP Proxy (client/proxy.sh)
 
 JB Gateway includes a proxy feature that allows you to forward HTTP requests from your local machine to the remote host
 via the gateway container. This is useful when you need to access services running on the remote host network.
@@ -191,9 +189,9 @@ via the gateway container. This is useful when you need to access services runni
 
 You can configure which ports to tunnel in two ways:
 
-1. Using a `.env` file (recommended for multiple ports):
+1. Using a `.env` file in `client/` (recommended for multiple ports):
    ```
-   # .env file example
+   # client/.env file example
    PROXY_PORTS=8080,8081,8082-8085
 
    # Optional SSH settings
@@ -205,7 +203,7 @@ You can configure which ports to tunnel in two ways:
 
 2. Using command-line arguments (for quick, one-time tunneling):
    ```bash
-   ./proxy.sh -p 8080,8081,8082-8085
+   ./client/proxy.sh -p 8080,8081,8082-8085
    ```
 
 The port specification supports:
@@ -219,7 +217,7 @@ The port specification supports:
 Run the proxy with:
 
 ```bash
-./proxy.sh [options]
+./client/proxy.sh [options]
 ```
 
 Options:
@@ -233,13 +231,13 @@ Options:
 Example:
 
 ```bash
-./proxy.sh -p 8080,8081,8082-8085
+./client/proxy.sh -p 8080,8081,8082-8085
 ```
 
 With password:
 
 ```bash
-./proxy.sh -p 8080,8081,8082-8085 -w password
+./client/proxy.sh -p 8080,8081,8082-8085 -w password
 ```
 
 This will set up tunnels for ports 8080, 8081, 8082, 8083, 8084, and 8085, forwarding each port from your local machine
@@ -263,7 +261,7 @@ All tunnels run in the background, allowing you to continue using your terminal.
 To stop all running proxy tunnels:
 
 ```bash
-./proxy-stop.sh
+./client/proxy-stop.sh
 ```
 
 This will terminate all proxy tunnels that were started by the proxy.sh script.
@@ -273,7 +271,7 @@ This will terminate all proxy tunnels that were started by the proxy.sh script.
 The proxy system creates several types of log files for easier troubleshooting:
 
 1. **Main proxy script logs**:
-   All output from the proxy.sh script is redirected to a log file:
+   All output from the proxy.sh script (now in `client/proxy.sh`) is redirected to a log file:
    ```
    ~/.jb-gateway/logs/proxy_YYYYMMDD_HHMMSS.log
    ```
@@ -286,7 +284,7 @@ The proxy system creates several types of log files for easier troubleshooting:
    Where `PORT` is the port number being tunneled.
 
 3. **Proxy stop script logs**:
-   Output from the proxy-stop.sh script is also logged:
+   Output from the proxy-stop.sh script (now in `client/proxy-stop.sh`) is also logged:
    ```
    ~/.jb-gateway/logs/proxy-stop_YYYYMMDD_HHMMSS.log
    ```
@@ -297,7 +295,7 @@ The main script output is also displayed in the terminal while the scripts run, 
 easier to debug issues that might occur while tunnels are running in the background. The individual tunnel logs are
 particularly useful for troubleshooting connection issues with specific ports.
 
-## SMB File Sharing
+### SMB Sharing Details
 
 JB Gateway includes SMB (Samba) file sharing capabilities, allowing you to access your projects directory over the
 network from other devices.
@@ -337,12 +335,12 @@ Alternatively, you can mount the share using the command line:
 sudo mount -t cifs //your-host-ip/projects /mnt/projects -o username=jb-gateway,password=password
 ```
 
-### Using the smb-connect.sh Script
+#### Using the `client/smb-connect.sh` Script
 
 JB Gateway includes a convenient script for viewing and mounting SMB shares from the command line:
 
 ```bash
-./smb-connect.sh
+./client/smb-connect.sh
 ```
 
 #### Viewing Available Shares
@@ -350,7 +348,7 @@ JB Gateway includes a convenient script for viewing and mounting SMB shares from
 To view all available shares on the JB Gateway container:
 
 ```bash
-./smb-connect.sh view
+./client/smb-connect.sh view
 ```
 
 This will display a list of all available shares, including the default "projects" share.
@@ -358,7 +356,7 @@ This will display a list of all available shares, including the default "project
 You can also view shares on a specific host by providing the hostname or IP address:
 
 ```bash
-./smb-connect.sh view 192.168.1.100
+./client/smb-connect.sh view 192.168.1.100
 ```
 
 #### Mounting Shares
@@ -366,24 +364,24 @@ You can also view shares on a specific host by providing the hostname or IP addr
 To mount a share to a local directory:
 
 ```bash
-./smb-connect.sh mount <share> <mountpoint>
+./client/smb-connect.sh mount <share> <mountpoint>
 ```
 
 For example, to mount the "projects" share to a directory called "smb-mount" in your home directory:
 
 ```bash
-./smb-connect.sh mount projects ~/smb-mount
+./client/smb-connect.sh mount projects ~/smb-mount
 ```
 
 You can also mount a share from a specific host by providing the hostname or IP address:
 
 ```bash
-./smb-connect.sh mount projects ~/smb-mount 192.168.1.100
+./client/smb-connect.sh mount projects ~/smb-mount 192.168.1.100
 ```
 
 The script will automatically create the mount point directory if it doesn't exist.
 
-### Remote Chrome Access
+### Remote Chrome Access Details
 
 The container includes a remote Chrome instance that can be accessed via a web browser using noVNC.
 
@@ -397,7 +395,8 @@ The container includes a remote Chrome instance that can be accessed via a web b
 3. Click "Connect".
 4. You will see a Fluxbox desktop environment with Chromium running.
 
-This is useful for debugging web applications or accessing web-based tools from within the container's network environment.
+This is useful for debugging web applications or accessing web-based tools from within the container's network
+environment.
 
 #### Configuration
 
@@ -409,7 +408,7 @@ This is useful for debugging web applications or accessing web-based tools from 
 
 ### SMB Configuration
 
-The script reads configuration from `.env` or `host.env` files if they exist. You can customize the following
+The script reads configuration from `client/.env` or `server/host.env` files if they exist. You can customize the following
 parameters:
 
 - `SMB_HOST`: The default hostname or IP address of the SMB server (default: localhost)
@@ -429,5 +428,5 @@ the default password.
     ```bash
     docker stop jb-gateway
     docker volume rm jb-gateway-cache
-    ./run.sh
+    ./server/run.sh
     ```

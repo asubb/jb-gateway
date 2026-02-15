@@ -13,15 +13,15 @@ SMB_USER="jb-gateway"
 SMB_PASSWORD="password"
 
 # Load configuration from .env file if it exists
-if [ -f ".env" ]; then
+if [ -f "$(dirname "$0")/.env" ]; then
     echo "Loading configuration from .env file..."
-    source .env
+    source "$(dirname "$0")/.env"
 fi
 
 # Load configuration from host.env file if it exists
-if [ -f "host.env" ]; then
+if [ -f "$(dirname "$0")/../server/host.env" ]; then
     echo "Loading configuration from host.env file..."
-    source host.env
+    source "$(dirname "$0")/../server/host.env"
 fi
 
 # Function to view available shares

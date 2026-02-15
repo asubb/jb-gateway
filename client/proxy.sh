@@ -28,9 +28,9 @@ AUTO_REFRESH=false
 REFRESH_INTERVAL=60  # seconds
 
 # Load environment variables from .env file if it exists
-if [ -f .env ]; then
+if [ -f "$(dirname "$0")/.env" ]; then
     echo "Loading configuration from .env file..."
-    source .env
+    source "$(dirname "$0")/.env"
 
     # Override defaults with values from .env if they exist
     [ ! -z "$SSH_PORT" ] && SSH_PORT="$SSH_PORT"
