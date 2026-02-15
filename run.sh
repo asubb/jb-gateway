@@ -131,7 +131,7 @@ docker run -it -d --name jb-gateway \
   -v ~/.jb-gateway/.local:/home/jb-gateway/.local/ \
   -v ~/.jb-gateway/.gradle:/home/jb-gateway/.gradle/ \
   -v ~/.jb-gateway/.jdks:/home/jb-gateway/.jdks/ \
-  -v ~/.jb-gateway/.sdkman/candidate:/home/jb-gateway/.sdkman/candidate \
+  -v ~/.jb-gateway/.sdkman/candidates:/home/jb-gateway/.sdkman/candidates \
   -v "$PROJECTS_DIR":/home/jb-gateway/projects \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e HOST_USER="$HOST_USER" \
