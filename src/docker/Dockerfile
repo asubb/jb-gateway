@@ -71,6 +71,13 @@ RUN useradd -m -d /home/jb-gateway -s /bin/bash jb-gateway && \
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
+# Install Node.js 20 and OpenSpec
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g @fission-ai/openspec@latest && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install SDKMAN! for jb-gateway user
 USER jb-gateway
 RUN curl -s "https://get.sdkman.io" | bash && \
