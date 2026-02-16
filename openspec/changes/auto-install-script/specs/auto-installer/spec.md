@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Single-line installation command
-The installer SHALL be accessible via a single curl or wget command that downloads and executes the installation script from the GitHub repository main branch.
+The installer SHALL be accessible via a single curl or wget command that downloads and executes the installation script from the GitHub repository.
 
 #### Scenario: Installation via curl
 - **WHEN** user runs `curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | bash -s -- --mode=server`
@@ -10,6 +10,10 @@ The installer SHALL be accessible via a single curl or wget command that downloa
 #### Scenario: Installation via wget
 - **WHEN** user runs `wget -qO- https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | bash -s -- --mode=client`
 - **THEN** the installation script SHALL download and execute successfully
+
+#### Scenario: Installation from different branch
+- **WHEN** user runs `curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/develop/install.sh | JBG_BRANCH=develop bash -s -- --mode=server`
+- **THEN** the installation script SHALL download and execute successfully using the specified branch
 
 ### Requirement: Installation mode selection
 The installer SHALL require a `--mode` flag with value `server`, `client`, or `both` to determine which components to install.
@@ -54,26 +58,34 @@ The installer SHALL install all files to `$HOME/.jb-gateway/bin` directory.
 - **THEN** the installer SHALL overwrite existing installation without prompting
 
 ### Requirement: File download from GitHub
-The installer SHALL download required files from the GitHub repository main branch.
+The installer SHALL download required files from the GitHub repository from the specified branch.
 
-#### Scenario: Git available
-- **WHEN** git command is available in PATH
-- **THEN** the installer SHALL use `git clone --depth 1` to download files
+#### Scenario: Git available with default branch
+- **WHEN** git command is available in PATH and no branch is specified
+- **THEN** the installer SHALL use `git clone --depth 1 --branch main` to download files
+
+#### Scenario: Git available with custom branch
+- **WHEN** git command is available in PATH and JBG_BRANCH environment variable is set
+- **THEN** the installer SHALL use `git clone --depth 1 --branch $JBG_BRANCH` to download files
 
 #### Scenario: Git not available
 - **WHEN** git command is not available
-- **THEN** the installer SHALL fall back to downloading individual files via curl/wget from raw.githubusercontent.com
+- **THEN** the installer SHALL fall back to downloading individual files via curl/wget from raw.githubusercontent.com using the specified branch
 
 #### Scenario: Network failure
 - **WHEN** network request fails
 - **THEN** the installer SHALL retry up to 3 times with exponential backoff before failing
 
 ### Requirement: Installation metadata
-The installer SHALL record installation metadata in `$HOME/.jb-gateway/bin/.install-mode` file.
+The installer SHALL record installation metadata in `$HOME/.jb-gateway/bin/.install-mode` and `.install-branch` files.
 
 #### Scenario: Mode persistence
 - **WHEN** installation completes successfully
 - **THEN** the installer SHALL write the installation mode (server, client, or both) to `.install-mode` file
+
+#### Scenario: Branch persistence
+- **WHEN** installation completes successfully
+- **THEN** the installer SHALL write the installation branch to `.install-branch` file
 
 #### Scenario: Multiple mode tracking
 - **WHEN** user installs additional mode after initial installation
@@ -82,6 +94,10 @@ The installer SHALL record installation metadata in `$HOME/.jb-gateway/bin/.inst
 #### Scenario: Installation timestamp
 - **WHEN** installation completes successfully
 - **THEN** the installer SHALL record the installation timestamp in `.install-mode` file
+
+#### Scenario: Branch switching detection
+- **WHEN** user installs from a different branch than currently installed
+- **THEN** the installer SHALL display a warning showing the branch change
 
 ### Requirement: Installation feedback
 The installer SHALL provide clear progress feedback and error messages to the user.

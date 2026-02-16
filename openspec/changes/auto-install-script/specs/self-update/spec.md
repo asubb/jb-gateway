@@ -16,7 +16,7 @@ The update command SHALL use git pull when the installation was done via git clo
 
 #### Scenario: Git-based installation update
 - **WHEN** `$HOME/.jb-gateway/bin/.git` directory exists
-- **THEN** the update command SHALL run `git pull origin main` to update files
+- **THEN** the update command SHALL run `git pull origin <branch>` to update files from the installed branch
 
 #### Scenario: Git pull success
 - **WHEN** git pull completes successfully
@@ -43,6 +43,21 @@ The update command SHALL preserve the original installation mode (server, client
 #### Scenario: Mode preservation from metadata
 - **WHEN** update command runs
 - **THEN** it SHALL read `.install-mode` file to determine which files to update
+
+### Requirement: Installation branch preservation
+The update command SHALL preserve the original installation branch.
+
+#### Scenario: Branch preservation from metadata
+- **WHEN** update command runs
+- **THEN** it SHALL read `.install-branch` file to determine which branch to update from
+
+#### Scenario: Git-based branch update
+- **WHEN** updating via git pull and `.install-branch` contains branch name
+- **THEN** the update SHALL pull from the specified branch
+
+#### Scenario: Non-git branch update
+- **WHEN** updating via file download and `.install-branch` contains branch name
+- **THEN** the update SHALL re-run installer with JBG_BRANCH environment variable set to the stored branch
 
 #### Scenario: Server mode update
 - **WHEN** original installation was server mode only

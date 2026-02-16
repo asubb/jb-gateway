@@ -49,11 +49,68 @@ The current setup is optimized for:
     - On Ubuntu/Debian: `sudo apt-get install sshpass`
     - On macOS: `brew install hudochenkov/sshpass/sshpass`
 
-## Installation
+## Quick Installation
+
+Install jb-gateway with a single command:
+
+### Server Installation
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | bash -s -- --mode=server
+```
+
+### Client Installation
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | bash -s -- --mode=client
+```
+
+### Install Both (Server + Client)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | bash -s -- --mode=both
+```
+
+After installation:
+1. Restart your shell or run: `source ~/.bashrc` (or `~/.zshrc` for zsh)
+2. Verify installation: `jbg help`
+3. Update anytime with: `jbg update`
+
+### Installation Options
+
+- `--mode=MODE`: Installation mode (`server`, `client`, or `both`) - **required**
+- `--force`: Overwrite existing installation without prompting
+- `--help`: Show installation help
+
+**Environment Variables:**
+
+- `JBG_BRANCH`: Branch to install from (default: `main`)
+
+**Examples:**
+
+```bash
+# Force reinstall server components
+curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | bash -s -- --mode=server --force
+
+# Add client components to existing server installation
+curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | bash -s -- --mode=client
+
+# Install from a different branch (e.g., develop)
+curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/develop/install.sh | JBG_BRANCH=develop bash -s -- --mode=server
+
+# Install from a feature branch
+curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/feature-xyz/install.sh | JBG_BRANCH=feature-xyz bash -s -- --mode=both
+```
+
+**Note:** When installing from a non-main branch, make sure to use the same branch name in both the URL and the `JBG_BRANCH` environment variable. Updates via `jbg update` will automatically use the same branch.
+
+### Manual Installation
+
+If you prefer manual installation:
 
 1. Clone this repository:
    ```shell
-   git clone <repository-url>
+   git clone https://github.com/asubb/jb-gateway
    cd jb-gateway
    ```
 
@@ -61,6 +118,79 @@ The current setup is optimized for:
    ```shell
    ./server/build.sh
     ```
+
+## jbg Command-Line Tool
+
+After installation, the `jbg` command provides a unified interface for managing jb-gateway:
+
+### Available Commands
+
+```bash
+jbg update              # Update jb-gateway to the latest version
+jbg server              # Server operations (coming soon)
+jbg client              # Client operations (coming soon)
+jbg help                # Show help message
+```
+
+### Examples
+
+```bash
+# Update your installation
+jbg update
+
+# View available commands
+jbg help
+
+# Server commands (planned)
+jbg server start        # Start the server container
+jbg server stop         # Stop the server container
+jbg server status       # Check server status
+
+# Client commands (planned)
+jbg client status       # Check client connection status
+jbg client proxy        # Manage proxy tunnels
+```
+
+### Update Command
+
+The `jbg update` command keeps your installation current:
+
+- **Git-based installations**: Uses `git pull` for fast updates
+- **Non-git installations**: Re-downloads files from GitHub
+- **Mode preservation**: Maintains your installation mode (server/client/both)
+- **Branch preservation**: Updates from the same branch you originally installed from
+- **Safe updates**: Creates backups before updating
+
+The update command automatically remembers which branch you installed from and pulls updates from that same branch. This ensures consistency and allows you to track development branches.
+
+### Manual Shell Integration
+
+If you installed for an unsupported shell or need to manually configure:
+
+Add this line to your shell's RC file (`.bashrc`, `.zshrc`, etc.):
+
+```bash
+[ -f "$HOME/.jb-gateway/bin/env.sh" ] && source "$HOME/.jb-gateway/bin/env.sh"
+```
+
+### Troubleshooting
+
+**Command not found after installation:**
+- Restart your shell or run: `source ~/.bashrc` (or `~/.zshrc` for zsh)
+- Verify PATH includes `$HOME/.jb-gateway/bin`
+
+**Installation fails with network errors:**
+- Check your internet connection
+- The installer retries up to 3 times with exponential backoff
+- For persistent issues, try manual installation from the cloned repository
+
+**Existing installation conflicts:**
+- Use `--force` flag to overwrite: `... | bash -s -- --mode=server --force`
+- Or manually remove `$HOME/.jb-gateway` before reinstalling
+
+**Update issues:**
+- If git pull fails, the updater falls back to re-downloading files
+- Check `$HOME/.jb-gateway/bin/.install-mode` to verify your installation mode
 
 ## Usage
 
