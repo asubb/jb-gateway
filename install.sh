@@ -476,18 +476,22 @@ Server Subcommands:
     jbg server stop     Stop the server container
     jbg server build    Build the server Docker image
     jbg server status   Check server status
+    jbg server config   Show server configuration and file locations
 
 Client Subcommands:
     jbg client status        Check client subsystems status
     jbg client proxy start   Start proxy tunnels
     jbg client proxy stop    Stop proxy tunnels
+    jbg client config        Show client configuration and file locations
 
 Examples:
     jbg update               Update to latest version
     jbg server start         Start server components
     jbg server status        Check if server is running
+    jbg server config        Show server configuration
     jbg client status        Check client status
     jbg client proxy start   Start proxy tunnels
+    jbg client config        Show client configuration
 
 HELP
 }
@@ -584,6 +588,15 @@ cmd_server() {
                 exit 1
             fi
             ;;
+        config)
+            if [[ -f "$INSTALL_DIR/server/config.sh" ]]; then
+                "$INSTALL_DIR/server/config.sh"
+            else
+                echo "Error: server/config.sh not found"
+                echo "Please ensure server mode is installed: jbg update"
+                exit 1
+            fi
+            ;;
         help|--help|-h)
             cat << HELP
 jbg server - Manage server operations
@@ -595,6 +608,7 @@ Subcommands:
     stop      Stop the server container
     build     Build the server Docker image
     status    Check server status
+    config    Show server configuration and file locations
     help      Show this help message
 
 Examples:
@@ -602,6 +616,7 @@ Examples:
     jbg server stop      Stop the jb-gateway container
     jbg server build     Build the Docker image
     jbg server status    Check if container is running
+    jbg server config    Show server configuration
 
 HELP
             ;;
@@ -624,6 +639,15 @@ cmd_client() {
                 "$INSTALL_DIR/client/status.sh"
             else
                 echo "Error: client/status.sh not found"
+                echo "Please ensure client mode is installed: jbg update"
+                exit 1
+            fi
+            ;;
+        config)
+            if [[ -f "$INSTALL_DIR/client/config.sh" ]]; then
+                "$INSTALL_DIR/client/config.sh"
+            else
+                echo "Error: client/config.sh not found"
                 echo "Please ensure client mode is installed: jbg update"
                 exit 1
             fi
@@ -681,11 +705,13 @@ Usage: jbg client <subcommand> [options]
 
 Subcommands:
     status    Check client subsystems status
+    config    Show client configuration and file locations
     proxy     Manage proxy tunnels (start, stop)
     help      Show this help message
 
 Examples:
     jbg client status           Show status of all client subsystems
+    jbg client config           Show client configuration
     jbg client proxy start      Start proxy tunnels
     jbg client proxy stop       Stop proxy tunnels
 
