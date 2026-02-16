@@ -22,6 +22,10 @@ The update command SHALL use git pull when the installation was done via git clo
 - **WHEN** git pull completes successfully
 - **THEN** the update command SHALL display updated files and success message
 
+#### Scenario: Wrapper regeneration after git update
+- **WHEN** git pull completes successfully
+- **THEN** the update command SHALL regenerate the jbg wrapper command from the updated install.sh to ensure all new subcommands are available
+
 #### Scenario: Git pull failure
 - **WHEN** git pull fails (e.g., merge conflicts, network error)
 - **THEN** the update command SHALL display error message and suggest manual resolution

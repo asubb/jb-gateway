@@ -513,7 +513,27 @@ cmd_update() {
         echo "Updating via git pull (branch: $branch)..."
         cd "$INSTALL_DIR"
         git pull origin "$branch"
-        echo "✓ Updated successfully"
+        echo "✓ Files updated successfully"
+
+        # Re-create jbg wrapper with updated code by extracting it from install.sh
+        echo "Regenerating jbg command wrapper..."
+        local temp_jbg=$(mktemp)
+
+        # Extract the jbg wrapper from install.sh (between the heredoc markers)
+        sed -n '/^    cat > "$jbg_file" << '\''EOF'\''/,/^EOF$/p' "$INSTALL_DIR/install.sh" | \
+            sed '1d;$d' > "$temp_jbg"
+
+        if [[ -s "$temp_jbg" ]]; then
+            mv "$temp_jbg" "$INSTALL_DIR/jbg"
+            chmod 755 "$INSTALL_DIR/jbg"
+            echo "✓ jbg wrapper regenerated"
+        else
+            rm -f "$temp_jbg"
+            echo "⚠ Warning: Could not regenerate jbg wrapper automatically"
+            echo "  The update was successful, but you may need to reinstall to get the latest jbg commands"
+        fi
+
+        echo "✓ Update complete"
     else
         echo "Updating via reinstall (branch: $branch)..."
         # Re-run installer with same branch
