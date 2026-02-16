@@ -2,6 +2,44 @@
 
 set -e
 
+# SSH Tunnel Proxy Script for jb-gateway
+# ========================================
+#
+# This script creates SSH tunnels from your local machine to services running on
+# a remote host or inside the jb-gateway container.
+#
+# PROXY DESTINATIONS:
+# -------------------
+# Each port can be configured to route to one of two destinations:
+#
+# 1. HOST_NETWORK (default): Routes traffic to the remote host's network
+#    - Target: host.docker.internal
+#    - Use for: Services running on the remote host machine
+#
+# 2. CONTAINER_LOCALHOST: Routes traffic to the gateway container's localhost
+#    - Target: 127.0.0.1 (inside the container)
+#    - Use for: Services running inside the jb-gateway container
+#    - Note: Container services must bind to 127.0.0.1 or 0.0.0.0
+#
+# CONFIGURATION:
+# --------------
+# Set PROXY_DESTINATIONS in client/.env file:
+#   Format: PORT:DESTINATION,PORT:DESTINATION
+#   Example: PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST,8080:HOST_NETWORK
+#
+# If PROXY_DESTINATIONS is not set, all ports default to HOST_NETWORK.
+#
+# EXAMPLES:
+# ---------
+# 1. Dev server on container localhost:
+#    PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST
+#
+# 2. Mixed destinations:
+#    PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST,8080:HOST_NETWORK,9000:HOST_NETWORK
+#
+# 3. Multiple container services:
+#    PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST,9999:CONTAINER_LOCALHOST
+
 # Define colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
