@@ -50,8 +50,21 @@ The `jbg` tool is the main interface for managing your gateway:
 
 - `jbg help`: Show all available commands.
 - `jbg update`: Keep your installation current.
-- `jbg server [start|stop|status]`: Manage the server container.
-- `jbg client [status|proxy]`: Manage client connections and tunnels.
+- `jbg server [start|stop|build|status|help]`: Manage the server container.
+- `jbg client [status|proxy|help]`: Manage client connections and tunnels.
+
+### Server Commands
+- `jbg server start`: Start the jb-gateway container
+- `jbg server stop`: Stop the jb-gateway container
+- `jbg server build`: Build the Docker image
+- `jbg server status`: Check if container is running
+- `jbg server help`: Show server command help
+
+### Client Commands
+- `jbg client status`: Show status of all client subsystems
+- `jbg client proxy start`: Start proxy tunnels
+- `jbg client proxy stop`: Stop proxy tunnels
+- `jbg client help`: Show client command help
 
 ## Advanced Topics & Documentation
 

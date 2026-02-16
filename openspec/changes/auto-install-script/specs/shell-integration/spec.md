@@ -67,6 +67,18 @@ All jb-gateway operations SHALL be accessible via the `jbg <command>` interface.
 - **WHEN** user runs `jbg` without arguments or with `--help`
 - **THEN** it SHALL display available subcommands and usage information
 
+#### Scenario: Server subcommands
+- **WHEN** user runs `jbg server <subcommand>`
+- **THEN** it SHALL support: start, stop, build, status, help
+
+#### Scenario: Client subcommands
+- **WHEN** user runs `jbg client <subcommand>`
+- **THEN** it SHALL support: status, proxy (with start/stop actions), help
+
+#### Scenario: Subcommand help
+- **WHEN** user runs `jbg server help` or `jbg client help`
+- **THEN** it SHALL display detailed help for that command group
+
 ### Requirement: Shell integration source line format
 The source line SHALL be conditional and safe to include in shell RC files.
 

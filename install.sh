@@ -463,18 +463,31 @@ show_help() {
     cat << HELP
 jbg - jb-gateway command-line tool
 
-Usage: jbg <command> [options]
+Usage: jbg <command> [subcommand] [options]
 
 Commands:
     update              Update jb-gateway installation
-    server              Server operations
-    client              Client operations
+    server              Server operations (start, stop, build, status)
+    client              Client operations (status, proxy)
     help                Show this help message
 
+Server Subcommands:
+    jbg server start    Start the server container
+    jbg server stop     Stop the server container
+    jbg server build    Build the server Docker image
+    jbg server status   Check server status
+
+Client Subcommands:
+    jbg client status        Check client subsystems status
+    jbg client proxy start   Start proxy tunnels
+    jbg client proxy stop    Stop proxy tunnels
+
 Examples:
-    jbg update          Update to latest version
-    jbg server start    Start server components
-    jbg client status   Check client status
+    jbg update               Update to latest version
+    jbg server start         Start server components
+    jbg server status        Check if server is running
+    jbg client status        Check client status
+    jbg client proxy start   Start proxy tunnels
 
 HELP
 }
@@ -508,6 +521,164 @@ cmd_update() {
     fi
 }
 
+# Server command
+cmd_server() {
+    local subcommand="${1:-status}"
+    shift || true
+
+    case "$subcommand" in
+        start)
+            if [[ -f "$INSTALL_DIR/server/run.sh" ]]; then
+                "$INSTALL_DIR/server/run.sh" "$@"
+            else
+                echo "Error: server/run.sh not found"
+                echo "Please ensure server mode is installed: jbg update"
+                exit 1
+            fi
+            ;;
+        stop)
+            if [[ -f "$INSTALL_DIR/server/stop.sh" ]]; then
+                "$INSTALL_DIR/server/stop.sh"
+            else
+                echo "Error: server/stop.sh not found"
+                echo "Please ensure server mode is installed: jbg update"
+                exit 1
+            fi
+            ;;
+        build)
+            if [[ -f "$INSTALL_DIR/server/build.sh" ]]; then
+                "$INSTALL_DIR/server/build.sh"
+            else
+                echo "Error: server/build.sh not found"
+                echo "Please ensure server mode is installed: jbg update"
+                exit 1
+            fi
+            ;;
+        status)
+            echo "Checking server status..."
+            if docker ps --filter "name=jb-gateway" --format "{{.Names}}" | grep -q "jb-gateway"; then
+                echo "✓ jb-gateway container is running"
+                docker ps --filter "name=jb-gateway" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            else
+                echo "✗ jb-gateway container is not running"
+                exit 1
+            fi
+            ;;
+        help|--help|-h)
+            cat << HELP
+jbg server - Manage server operations
+
+Usage: jbg server <subcommand> [options]
+
+Subcommands:
+    start     Start the server container
+    stop      Stop the server container
+    build     Build the server Docker image
+    status    Check server status
+    help      Show this help message
+
+Examples:
+    jbg server start     Start the jb-gateway container
+    jbg server stop      Stop the jb-gateway container
+    jbg server build     Build the Docker image
+    jbg server status    Check if container is running
+
+HELP
+            ;;
+        *)
+            echo "Unknown server subcommand: $subcommand"
+            echo "Run 'jbg server help' for usage information"
+            exit 1
+            ;;
+    esac
+}
+
+# Client command
+cmd_client() {
+    local subcommand="${1:-status}"
+    shift || true
+
+    case "$subcommand" in
+        status)
+            if [[ -f "$INSTALL_DIR/client/status.sh" ]]; then
+                "$INSTALL_DIR/client/status.sh"
+            else
+                echo "Error: client/status.sh not found"
+                echo "Please ensure client mode is installed: jbg update"
+                exit 1
+            fi
+            ;;
+        proxy)
+            local action="${1:-start}"
+            case "$action" in
+                start)
+                    if [[ -f "$INSTALL_DIR/client/proxy.sh" ]]; then
+                        "$INSTALL_DIR/client/proxy.sh"
+                    else
+                        echo "Error: client/proxy.sh not found"
+                        echo "Please ensure client mode is installed: jbg update"
+                        exit 1
+                    fi
+                    ;;
+                stop)
+                    if [[ -f "$INSTALL_DIR/client/proxy-stop.sh" ]]; then
+                        "$INSTALL_DIR/client/proxy-stop.sh"
+                    else
+                        echo "Error: client/proxy-stop.sh not found"
+                        echo "Please ensure client mode is installed: jbg update"
+                        exit 1
+                    fi
+                    ;;
+                help|--help|-h)
+                    cat << HELP
+jbg client proxy - Manage proxy tunnels
+
+Usage: jbg client proxy <action>
+
+Actions:
+    start    Start proxy tunnels
+    stop     Stop proxy tunnels
+    help     Show this help message
+
+Examples:
+    jbg client proxy start    Start all configured proxy tunnels
+    jbg client proxy stop     Stop all proxy tunnels
+
+HELP
+                    ;;
+                *)
+                    echo "Unknown proxy action: $action"
+                    echo "Run 'jbg client proxy help' for usage information"
+                    exit 1
+                    ;;
+            esac
+            ;;
+        help|--help|-h)
+            cat << HELP
+jbg client - Manage client operations
+
+Usage: jbg client <subcommand> [options]
+
+Subcommands:
+    status    Check client subsystems status
+    proxy     Manage proxy tunnels (start, stop)
+    help      Show this help message
+
+Examples:
+    jbg client status           Show status of all client subsystems
+    jbg client proxy start      Start proxy tunnels
+    jbg client proxy stop       Stop proxy tunnels
+
+HELP
+            ;;
+        *)
+            echo "Unknown client subcommand: $subcommand"
+            echo "Run 'jbg client help' for usage information"
+            exit 1
+            ;;
+    esac
+}
+
 # Main command router
 main() {
     local command="${1:-help}"
@@ -520,9 +691,11 @@ main() {
         help|--help|-h)
             show_help
             ;;
-        server|client)
-            echo "Command '$command' not yet implemented"
-            exit 1
+        server)
+            cmd_server "$@"
+            ;;
+        client)
+            cmd_client "$@"
             ;;
         *)
             echo "Unknown command: $command"
