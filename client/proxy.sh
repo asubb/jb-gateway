@@ -250,9 +250,21 @@ start_tunnel() {
     local pid_file="$PID_DIR/proxy_$port.pid"
     if [ -f "$pid_file" ]; then
         local pid=$(cat "$pid_file")
-        if ps -p "$pid" > /dev/null; then
-            # Additional check: verify this process is actually an SSH tunnel for this port
-            if ps aux | grep -v grep | grep "$pid" | grep -q "ssh.*-L.*$port:\(host.docker.internal\|127.0.0.1\):$port"; then
+        if ps -p "$pid" > /dev/null 2>&1; then
+            # Additional check: verify this process is actually an SSH tunnel
+            # Check both the parent process (sshpass) and potential child processes (ssh)
+            local cmd_line=$(ps -p "$pid" -o command= 2>/dev/null | head -1)
+            # Also check for child SSH processes
+            local has_ssh_child=false
+            if command -v pgrep > /dev/null 2>&1; then
+                # Check if there's an ssh child process with our port
+                if pgrep -P "$pid" 2>/dev/null | xargs ps -p 2>/dev/null | grep -q "ssh.*-L.*$port:"; then
+                    has_ssh_child=true
+                fi
+            fi
+
+            # Accept if it's sshpass (parent of ssh) or ssh itself, or has ssh child
+            if [[ "$cmd_line" =~ sshpass ]] || [[ "$cmd_line" =~ ssh.*-L.*$port: ]] || [ "$has_ssh_child" = true ]; then
                 echo -e "${GREEN}Port $port: Tunnel already running (PID: $pid). Skipping.${NC}"
                 return
             else
@@ -309,10 +321,21 @@ check_tunnels() {
             local pid=$(cat "$pid_file")
 
             # Check if process is still running
-            if ps -p "$pid" > /dev/null; then
-                # Additional check: verify this process is actually an SSH tunnel for this port
-                # Support both host.docker.internal and 127.0.0.1 patterns
-                if ps aux | grep -v grep | grep "$pid" | grep -q "ssh.*-L.*$port:\(host.docker.internal\|127.0.0.1\):$port"; then
+            if ps -p "$pid" > /dev/null 2>&1; then
+                # Additional check: verify this process is actually an SSH tunnel
+                # Check both the parent process (sshpass) and potential child processes (ssh)
+                local cmd_line=$(ps -p "$pid" -o command= 2>/dev/null | head -1)
+                # Also check for child SSH processes
+                local has_ssh_child=false
+                if command -v pgrep > /dev/null 2>&1; then
+                    # Check if there's an ssh child process with our port
+                    if pgrep -P "$pid" 2>/dev/null | xargs ps -p 2>/dev/null | grep -q "ssh.*-L.*$port:"; then
+                        has_ssh_child=true
+                    fi
+                fi
+
+                # Accept if it's sshpass (parent of ssh) or ssh itself, or has ssh child
+                if [[ "$cmd_line" =~ sshpass ]] || [[ "$cmd_line" =~ ssh.*-L.*$port: ]] || [ "$has_ssh_child" = true ]; then
                     echo -e "${GREEN}[$timestamp] Port $port: Tunnel healthy (PID: $pid).${NC}"
                 else
                     echo -e "${YELLOW}[$timestamp] Port $port: PID $pid exists but not a tunnel. Restarting...${NC}"
