@@ -2,6 +2,44 @@
 
 set -e
 
+# SSH Tunnel Proxy Script for jb-gateway
+# ========================================
+#
+# This script creates SSH tunnels from your local machine to services running on
+# a remote host or inside the jb-gateway container.
+#
+# PROXY DESTINATIONS:
+# -------------------
+# Each port can be configured to route to one of two destinations:
+#
+# 1. HOST_NETWORK (default): Routes traffic to the remote host's network
+#    - Target: host.docker.internal
+#    - Use for: Services running on the remote host machine
+#
+# 2. CONTAINER_LOCALHOST: Routes traffic to the gateway container's localhost
+#    - Target: 127.0.0.1 (inside the container)
+#    - Use for: Services running inside the jb-gateway container
+#    - Note: Container services must bind to 127.0.0.1 or 0.0.0.0
+#
+# CONFIGURATION:
+# --------------
+# Set PROXY_DESTINATIONS in client/.env file:
+#   Format: PORT:DESTINATION,PORT:DESTINATION
+#   Example: PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST,8080:HOST_NETWORK
+#
+# If PROXY_DESTINATIONS is not set, all ports default to HOST_NETWORK.
+#
+# EXAMPLES:
+# ---------
+# 1. Dev server on container localhost:
+#    PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST
+#
+# 2. Mixed destinations:
+#    PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST,8080:HOST_NETWORK,9000:HOST_NETWORK
+#
+# 3. Multiple container services:
+#    PROXY_DESTINATIONS=3000:CONTAINER_LOCALHOST,9999:CONTAINER_LOCALHOST
+
 # Define colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -39,6 +77,7 @@ if [ -f "$(dirname "$0")/.env" ]; then
     [ ! -z "$SSH_PASSWORD" ] && SSH_PASSWORD="$SSH_PASSWORD"
     [ ! -z "$AUTO_REFRESH" ] && AUTO_REFRESH="$AUTO_REFRESH"
     [ ! -z "$REFRESH_INTERVAL" ] && REFRESH_INTERVAL="$REFRESH_INTERVAL"
+    # PROXY_DESTINATIONS is loaded from .env via source command above
 fi
 
 # Help message
@@ -53,6 +92,13 @@ function show_help {
     echo "  -a, --auto-refresh       Automatically refresh tunnels every minute to ensure they stay up"
     echo "  -i, --interval SECONDS   Refresh interval in seconds (default: 60, only works with -a)"
     echo "  -h, --help               Show this help message"
+    echo ""
+    echo "Environment variables (set in .env file):"
+    echo "  PROXY_PORTS              Default ports to tunnel"
+    echo "  PROXY_DESTINATIONS       Per-port destination configuration (format: PORT:DESTINATION,PORT:DESTINATION)"
+    echo "                           Valid destinations: CONTAINER_LOCALHOST, HOST_NETWORK"
+    echo "                           Example: 3000:CONTAINER_LOCALHOST,8080:HOST_NETWORK"
+    echo "                           Default: HOST_NETWORK for all ports"
     echo ""
     echo "Example: $0 -p 8080,8081,8082-8085 -a"
     echo "This will forward multiple ports from localhost to the same ports on the remote host via jb-gateway"
@@ -148,17 +194,77 @@ expand_port_range() {
     fi
 }
 
+# Function to get destination for a port
+get_destination_for_port() {
+    local port="$1"
+
+    # If PROXY_DESTINATIONS is not set, default to HOST_NETWORK
+    if [ -z "$PROXY_DESTINATIONS" ]; then
+        echo "HOST_NETWORK"
+        return
+    fi
+
+    # Parse PROXY_DESTINATIONS (format: PORT:DESTINATION,PORT:DESTINATION)
+    IFS=',' read -ra DEST_SPECS <<< "$PROXY_DESTINATIONS"
+    for dest_spec in "${DEST_SPECS[@]}"; do
+        # Split on colon
+        if [[ "$dest_spec" == *:* ]]; then
+            local spec_port="${dest_spec%%:*}"
+            local spec_dest="${dest_spec##*:}"
+
+            # Check if this is the port we're looking for
+            if [ "$spec_port" = "$port" ]; then
+                # Validate destination value
+                if [ "$spec_dest" = "CONTAINER_LOCALHOST" ] || [ "$spec_dest" = "HOST_NETWORK" ]; then
+                    echo "$spec_dest"
+                    return
+                else
+                    echo -e "${YELLOW}Warning: Invalid destination '$spec_dest' for port $port. Valid values: CONTAINER_LOCALHOST, HOST_NETWORK. Using default HOST_NETWORK.${NC}" >&2
+                    echo "HOST_NETWORK"
+                    return
+                fi
+            fi
+        else
+            echo -e "${YELLOW}Warning: Invalid PROXY_DESTINATIONS format in entry '$dest_spec'. Expected PORT:DESTINATION.${NC}" >&2
+        fi
+    done
+
+    # No destination found for this port, use default
+    echo "HOST_NETWORK"
+}
+
 # Function to start a tunnel for a specific port
 start_tunnel() {
     local port="$1"
+
+    # Get destination for this port
+    local destination=$(get_destination_for_port "$port")
+    local target_host
+    if [ "$destination" = "CONTAINER_LOCALHOST" ]; then
+        target_host="127.0.0.1"
+    else
+        target_host="host.docker.internal"
+    fi
 
     # Check if a tunnel is already running for this port
     local pid_file="$PID_DIR/proxy_$port.pid"
     if [ -f "$pid_file" ]; then
         local pid=$(cat "$pid_file")
-        if ps -p "$pid" > /dev/null; then
-            # Additional check: verify this process is actually an SSH tunnel for this port
-            if ps aux | grep -v grep | grep "$pid" | grep -q "ssh.*-L.*$port:host.docker.internal:$port"; then
+        if ps -p "$pid" > /dev/null 2>&1; then
+            # Additional check: verify this process is actually an SSH tunnel
+            # Check both the parent process (sshpass) and potential child processes (ssh)
+            local cmd_line=$(ps -p "$pid" -o command= 2>/dev/null | head -1)
+            # Also check for child SSH processes
+            local has_ssh_child=false
+            if command -v pgrep > /dev/null 2>&1; then
+                # Check if there's an ssh child process with our port
+                if pgrep -P "$pid" 2>/dev/null | xargs ps -p 2>/dev/null | grep -q "ssh.*-L.*$port:"; then
+                    has_ssh_child=true
+                fi
+            fi
+
+            # Accept if it's sshpass (parent of ssh) or ssh itself, or has ssh child
+            if [[ "$cmd_line" =~ sshpass ]] || [[ "$cmd_line" =~ ssh.*-L.*$port: ]] || [ "$has_ssh_child" = true ]; then
                 echo -e "${GREEN}Port $port: Tunnel already running (PID: $pid). Skipping.${NC}"
                 return
             else
@@ -173,15 +279,15 @@ start_tunnel() {
 
     # Create a log file for this tunnel
     local tunnel_log_file="$LOG_DIR/tunnel_${port}_$(date +%Y%m%d_%H%M%S).log"
-    echo -e "${GREEN}Port $port: Starting tunnel...${NC}"
+    echo -e "${GREEN}Port $port: Starting tunnel to $destination...${NC}"
 
     # Start SSH tunnel in background with output redirection
     if [ -n "$SSH_PASSWORD" ]; then
         # Use sshpass if password is provided
-        sshpass -p "$SSH_PASSWORD" ssh -N -L "$port:host.docker.internal:$port" "$SSH_USER@$SSH_HOST" -p "$SSH_PORT" > "$tunnel_log_file" 2>&1 &
+        sshpass -p "$SSH_PASSWORD" ssh -N -L "$port:$target_host:$port" "$SSH_USER@$SSH_HOST" -p "$SSH_PORT" > "$tunnel_log_file" 2>&1 &
     else
         # Use regular SSH if no password is provided
-        ssh -N -L "$port:host.docker.internal:$port" "$SSH_USER@$SSH_HOST" -p "$SSH_PORT" > "$tunnel_log_file" 2>&1 &
+        ssh -N -L "$port:$target_host:$port" "$SSH_USER@$SSH_HOST" -p "$SSH_PORT" > "$tunnel_log_file" 2>&1 &
     fi
 
     # Save the PID
@@ -196,28 +302,40 @@ start_tunnel() {
 check_tunnels() {
     local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
     echo -e "${GREEN}[$timestamp] Checking tunnel status...${NC}"
-    
+
     # Get all PID files except monitor.pid
     local pid_files=$(find "$PID_DIR" -name "proxy_*.pid" 2>/dev/null)
-    
+
     if [ -z "$pid_files" ]; then
         echo -e "${YELLOW}[$timestamp] No tunnels configured.${NC}"
         return
     fi
-    
+
     # Process each PID file
     for pid_file in $pid_files; do
         # Extract port number from filename
         local port=$(basename "$pid_file" | sed 's/proxy_\([0-9]*\)\.pid/\1/')
-        
+
         # Read PID from file
         if [ -f "$pid_file" ]; then
             local pid=$(cat "$pid_file")
-            
+
             # Check if process is still running
-            if ps -p "$pid" > /dev/null; then
-                # Additional check: verify this process is actually an SSH tunnel for this port
-                if ps aux | grep -v grep | grep "$pid" | grep -q "ssh.*-L.*$port:host.docker.internal:$port"; then
+            if ps -p "$pid" > /dev/null 2>&1; then
+                # Additional check: verify this process is actually an SSH tunnel
+                # Check both the parent process (sshpass) and potential child processes (ssh)
+                local cmd_line=$(ps -p "$pid" -o command= 2>/dev/null | head -1)
+                # Also check for child SSH processes
+                local has_ssh_child=false
+                if command -v pgrep > /dev/null 2>&1; then
+                    # Check if there's an ssh child process with our port
+                    if pgrep -P "$pid" 2>/dev/null | xargs ps -p 2>/dev/null | grep -q "ssh.*-L.*$port:"; then
+                        has_ssh_child=true
+                    fi
+                fi
+
+                # Accept if it's sshpass (parent of ssh) or ssh itself, or has ssh child
+                if [[ "$cmd_line" =~ sshpass ]] || [[ "$cmd_line" =~ ssh.*-L.*$port: ]] || [ "$has_ssh_child" = true ]; then
                     echo -e "${GREEN}[$timestamp] Port $port: Tunnel healthy (PID: $pid).${NC}"
                 else
                     echo -e "${YELLOW}[$timestamp] Port $port: PID $pid exists but not a tunnel. Restarting...${NC}"
@@ -232,7 +350,7 @@ check_tunnels() {
             fi
         fi
     done
-    
+
     echo -e "${GREEN}[$timestamp] Tunnel check completed.${NC}"
 }
 
