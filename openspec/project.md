@@ -19,6 +19,7 @@ radius" of AI agents and protecting the host system.
 ## Key Conventions
 
 - **Project Location**: Host projects are mounted to `/home/jb-gateway/projects/` inside the container.
+- **Host Networking**: Use `host.docker.internal` to access services running on the host from within the container.
 - **Service Management**: Use `server/build.sh`, `server/run.sh`, and `server/stop.sh` for lifecycle management.
 - **Client Access**: Client scripts are located in `client/` (e.g., `proxy.sh`, `smb-connect.sh`).
 - **Development Workflow**: Spec-driven development using OpenSpec.

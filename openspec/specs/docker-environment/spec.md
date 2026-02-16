@@ -104,6 +104,10 @@ The system SHALL provide container access to the host's Docker daemon for Docker
 - **WHEN** user runs Docker commands in container
 - **THEN** commands execute against host's Docker daemon
 
+#### Scenario: Accessing host services via host.docker.internal
+- **WHEN** a service is running on the host (either directly or via Docker)
+- **THEN** the container can access it using the hostname 'host.docker.internal'
+
 ### Requirement: User and permissions
 The system SHALL run container processes as a non-root user with appropriate permissions.
 
