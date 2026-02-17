@@ -51,7 +51,7 @@
 
 ## 8. Documentation
 
-- [x] 8.1 Update README with profile support overview
+- [x] 8.1 Update README with profile support overview (created docs/profiles.md)
 - [x] 8.2 Document `--profile <name>` flag usage on all client commands
 - [x] 8.3 Document profile directory structure (`~/.jb-gateway/profiles/<name>/`)
 - [x] 8.4 Document that users must configure different ports for different profiles
