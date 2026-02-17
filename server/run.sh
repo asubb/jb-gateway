@@ -127,7 +127,7 @@ fi
 
 echo "Using projects directory: $PROJECTS_DIR"
 
-docker run -it -d --name jb-gateway \
+docker run -d --name jb-gateway \
   -v ~/.jb-gateway/.ssh:/home/jb-gateway/.ssh/ \
   -v ~/.jb-gateway/.config:/home/jb-gateway/.config/ \
   -v jb-gateway-cache:/home/jb-gateway/.cache \
@@ -149,10 +149,23 @@ docker run -it -d --name jb-gateway \
   -p 9222:9222 \
   jb-gateway
 
+# Wait for the container to be in 'running' state
+echo "Waiting for jb-gateway container to start..."
+MAX_RETRIES=10
+RETRY_COUNT=0
+while [ "$(docker inspect -f '{{.State.Running}}' jb-gateway 2>/dev/null)" != "true" ]; do
+  sleep 1
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+    echo "Error: Container failed to start within $MAX_RETRIES seconds."
+    exit 1
+  fi
+done
+
 # Change ownership of the cache volume to jb-gateway user
 docker exec jb-gateway chown -R jb-gateway:jb-gateway /home/jb-gateway/.cache
 
-# Wait a moment for the container to initialize
+# Wait a moment for the container to initialize (some services start in background)
 sleep 2
 
 # Display connection information
@@ -161,7 +174,18 @@ echo "🚀 JetBrains Gateway container is ready!"
 echo ""
 echo "🔑 SSH PUBLIC KEY (Container User):"
 echo "------------------------------------"
-docker exec jb-gateway cat /home/jb-gateway/.ssh/id_rsa.pub
+# Wait until the SSH key is generated in the container
+MAX_RETRIES=10
+RETRY_COUNT=0
+while ! docker exec jb-gateway [ -f /home/jb-gateway/.ssh/id_rsa.pub ] 2>/dev/null; do
+  sleep 1
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+    echo "Warning: SSH key not found in container. You may need to check it manually later."
+    break
+  fi
+done
+docker exec jb-gateway cat /home/jb-gateway/.ssh/id_rsa.pub || echo "SSH key not available yet."
 echo "------------------------------------"
 echo "👉 Add this key to your GitHub/GitLab account to enable git operations."
 echo ""
