@@ -8,8 +8,40 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-# Directory where PID files are stored
-PID_DIR="$HOME/.jb-gateway/proxy"
+# Profile support
+PROFILE=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        --profile)
+            PROFILE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo "Options:"
+            echo "  --profile NAME    Use profile-specific configuration directory"
+            echo "  -h, --help        Show this help message"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}Error: Unknown option: $1${NC}"
+            echo "Usage: $0 [--profile NAME]"
+            exit 1
+            ;;
+    esac
+done
+
+# Resolve PID directory based on profile
+if [[ -n "$PROFILE" ]]; then
+    PID_DIR="$HOME/.jb-gateway/profiles/$PROFILE/state"
+    PID_PATTERN="tunnel_*.pid"
+else
+    PID_DIR="$HOME/.jb-gateway/proxy"
+    PID_PATTERN="proxy_*.pid"
+fi
 
 if [ ! -d "$PID_DIR" ]; then
     echo -e "${YELLOW}No proxy tunnels found. Directory $PID_DIR does not exist.${NC}"
@@ -32,7 +64,7 @@ if [ -f "$MONITOR_PID_FILE" ]; then
 fi
 
 # Check if there are any PID files
-PID_FILES=$(find "$PID_DIR" -name "proxy_*.pid" 2>/dev/null)
+PID_FILES=$(find "$PID_DIR" -name "$PID_PATTERN" 2>/dev/null)
 
 if [ -z "$PID_FILES" ]; then
     echo -e "${YELLOW}No active proxy tunnels found.${NC}"
@@ -47,7 +79,11 @@ TERMINATED=0
 # Process each PID file
 for pid_file in $PID_FILES; do
     # Extract port number from filename
-    port=$(basename "$pid_file" | sed 's/proxy_\([0-9]*\)\.pid/\1/')
+    if [[ -n "$PROFILE" ]]; then
+        port=$(basename "$pid_file" | sed 's/tunnel_\([0-9]*\)\.pid/\1/')
+    else
+        port=$(basename "$pid_file" | sed 's/proxy_\([0-9]*\)\.pid/\1/')
+    fi
 
     # Read PID from file
     if [ -f "$pid_file" ]; then

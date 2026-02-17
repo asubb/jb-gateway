@@ -66,6 +66,62 @@ The `jbg` tool is the main interface for managing your gateway:
 - `jbg client proxy stop`: Stop proxy tunnels
 - `jbg client help`: Show client command help
 
+## Profile Support
+
+Client commands support optional profiles for managing multiple isolated development environments. Each profile maintains its own configuration, SSH keys, state files, and logs.
+
+### Using Profiles
+
+Add `--profile <name>` to any client command:
+
+```bash
+# Start proxy tunnels using "dev" profile
+./client/proxy.sh --profile dev -p 8080,8081
+
+# Check status of "staging" profile
+./client/status.sh --profile staging
+
+# Stop tunnels for "dev" profile
+./client/proxy-stop.sh --profile dev
+```
+
+### Profile Directory Structure
+
+**Without profile** (default):
+- Configuration: `~/.jb-gateway/` and `client/.env`
+- PID files: `~/.jb-gateway/proxy/`
+- Logs: `~/.jb-gateway/logs/`
+
+**With profile** (`--profile <name>`):
+- Configuration: `~/.jb-gateway/profiles/<name>/.env`
+- SSH keys: `~/.jb-gateway/profiles/<name>/ssh/`
+- PID files: `~/.jb-gateway/profiles/<name>/state/`
+- Logs: `~/.jb-gateway/profiles/<name>/logs/`
+- Secrets: `~/.jb-gateway/profiles/<name>/secrets/`
+
+Profiles are created automatically on first use with proper permissions (0700).
+
+### Profile Management
+
+**Create a profile**: Just use `--profile <name>` - the directory structure is created automatically.
+
+**List profiles**:
+```bash
+ls ~/.jb-gateway/profiles/
+```
+
+**Delete a profile**:
+```bash
+rm -rf ~/.jb-gateway/profiles/<name>
+```
+
+### Important Notes
+
+- **Port Configuration**: Each profile needs its own port assignments. Configure different ports in each profile's `.env` file.
+- **SSH Keys**: Place profile-specific SSH keys in `~/.jb-gateway/profiles/<name>/ssh/`.
+- **Concurrent Operation**: Multiple profiles can run simultaneously with independent tunnels.
+- **Backward Compatibility**: Commands without `--profile` use the default configuration (no breaking changes).
+
 ## Advanced Topics & Documentation
 
 For detailed guides and configuration, see the `docs/` directory:
