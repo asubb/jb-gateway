@@ -7,17 +7,59 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Profile support
+PROFILE=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        --profile)
+            PROFILE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo "Options:"
+            echo "  --profile NAME    Display configuration for specific profile"
+            echo "  -h, --help        Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Error: Unknown option: $1"
+            echo "Usage: $0 [--profile NAME]"
+            exit 1
+            ;;
+    esac
+done
+
 # Source shared utilities
 source "$PROJECT_ROOT/lib/config-display.sh"
 
-# Detect client configuration file location
-CLIENT_ENV_FILE="$SCRIPT_DIR/.env"
-PID_DIR="$HOME/.jb-gateway/proxy"
-LOG_DIR="$HOME/.jb-gateway/logs"
+# Resolve paths based on profile
+if [[ -n "$PROFILE" ]]; then
+    CONFIG_DIR="$HOME/.jb-gateway/profiles/$PROFILE"
+    CLIENT_ENV_FILE="$CONFIG_DIR/.env"
+    PID_DIR="$CONFIG_DIR/state"
+    LOG_DIR="$CONFIG_DIR/logs"
+else
+    CONFIG_DIR="$HOME/.jb-gateway"
+    CLIENT_ENV_FILE="$SCRIPT_DIR/.env"
+    PID_DIR="$HOME/.jb-gateway/proxy"
+    LOG_DIR="$HOME/.jb-gateway/logs"
+fi
 
 main() {
     echo ""
     display_section_separator "Client Configuration"
+    echo ""
+
+    # Display profile information
+    if [[ -n "$PROFILE" ]]; then
+        echo -e "  ${CYAN}Profile:${NC} ${GREEN}$PROFILE${NC}"
+    else
+        echo -e "  ${CYAN}Profile:${NC} ${CYAN}(default)${NC}"
+    fi
     echo ""
 
     # Display configuration file location

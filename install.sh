@@ -484,6 +484,16 @@ Client Subcommands:
     jbg client proxy stop    Stop proxy tunnels
     jbg client config        Show client configuration and file locations
 
+Profile Support:
+    All client commands support the --profile flag to manage isolated environments.
+
+    Usage: jbg client <subcommand> --profile <name> [other options]
+
+    Examples:
+        jbg client proxy start --profile dev
+        jbg client status --profile staging
+        jbg client config --profile production
+
 Examples:
     jbg update               Update to latest version
     jbg server start         Start server components
@@ -636,7 +646,7 @@ cmd_client() {
     case "$subcommand" in
         status)
             if [[ -f "$INSTALL_DIR/client/status.sh" ]]; then
-                "$INSTALL_DIR/client/status.sh"
+                "$INSTALL_DIR/client/status.sh" "$@"
             else
                 echo "Error: client/status.sh not found"
                 echo "Please ensure client mode is installed: jbg update"
@@ -645,7 +655,7 @@ cmd_client() {
             ;;
         config)
             if [[ -f "$INSTALL_DIR/client/config.sh" ]]; then
-                "$INSTALL_DIR/client/config.sh"
+                "$INSTALL_DIR/client/config.sh" "$@"
             else
                 echo "Error: client/config.sh not found"
                 echo "Please ensure client mode is installed: jbg update"
@@ -654,10 +664,11 @@ cmd_client() {
             ;;
         proxy)
             local action="${1:-start}"
+            shift || true
             case "$action" in
                 start)
                     if [[ -f "$INSTALL_DIR/client/proxy.sh" ]]; then
-                        "$INSTALL_DIR/client/proxy.sh"
+                        "$INSTALL_DIR/client/proxy.sh" "$@"
                     else
                         echo "Error: client/proxy.sh not found"
                         echo "Please ensure client mode is installed: jbg update"
@@ -666,7 +677,7 @@ cmd_client() {
                     ;;
                 stop)
                     if [[ -f "$INSTALL_DIR/client/proxy-stop.sh" ]]; then
-                        "$INSTALL_DIR/client/proxy-stop.sh"
+                        "$INSTALL_DIR/client/proxy-stop.sh" "$@"
                     else
                         echo "Error: client/proxy-stop.sh not found"
                         echo "Please ensure client mode is installed: jbg update"

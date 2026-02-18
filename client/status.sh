@@ -1,15 +1,53 @@
 #!/bin/bash
 
 # status.sh - Display operational status of all jb-gateway client subsystems
-# Usage: ./client/status.sh
+# Usage: ./client/status.sh [--profile NAME]
 
 set -e
 
+# Profile support
+PROFILE=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        --profile)
+            PROFILE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [options]"
+            echo "Options:"
+            echo "  --profile NAME    Use profile-specific configuration directory"
+            echo "  -h, --help        Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Error: Unknown option: $1"
+            echo "Usage: $0 [--profile NAME]"
+            exit 1
+            ;;
+    esac
+done
+
 # Directory paths
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ENV_FILE="$SCRIPT_DIR/.env"
-PID_DIR="$HOME/.jb-gateway/proxy"
-LOG_DIR="$HOME/.jb-gateway/logs"
+
+# Resolve paths based on profile
+if [[ -n "$PROFILE" ]]; then
+    CONFIG_DIR="$HOME/.jb-gateway/profiles/$PROFILE"
+    ENV_FILE="$CONFIG_DIR/.env"
+    PID_DIR="$CONFIG_DIR/state"
+    LOG_DIR="$CONFIG_DIR/logs"
+    PID_PATTERN="tunnel_*.pid"
+else
+    CONFIG_DIR="$HOME/.jb-gateway"
+    ENV_FILE="$SCRIPT_DIR/.env"
+    PID_DIR="$HOME/.jb-gateway/proxy"
+    LOG_DIR="$HOME/.jb-gateway/logs"
+    PID_PATTERN="proxy_*.pid"
+fi
 
 # Color codes
 GREEN='\033[0;32m'
@@ -66,7 +104,7 @@ check_proxy_dir_exists() {
 
 find_proxy_pids() {
     if check_proxy_dir_exists; then
-        find "$PID_DIR" -name "proxy_*.pid" 2>/dev/null
+        find "$PID_DIR" -name "$PID_PATTERN" 2>/dev/null
     fi
 }
 
@@ -143,7 +181,11 @@ format_uptime() {
 
 extract_port_from_filename() {
     local pid_file=$1
-    basename "$pid_file" | sed 's/proxy_\([0-9]*\)\.pid/\1/'
+    if [[ -n "$PROFILE" ]]; then
+        basename "$pid_file" | sed 's/tunnel_\([0-9]*\)\.pid/\1/'
+    else
+        basename "$pid_file" | sed 's/proxy_\([0-9]*\)\.pid/\1/'
+    fi
 }
 
 check_tunnel_status() {
@@ -466,6 +508,11 @@ main() {
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "  Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
     echo -e "  Platform: $PLATFORM"
+    if [[ -n "$PROFILE" ]]; then
+        echo -e "  Profile: ${GREEN}$PROFILE${NC}"
+    else
+        echo -e "  Profile: ${CYAN}(default)${NC}"
+    fi
     echo ""
 
     display_configuration

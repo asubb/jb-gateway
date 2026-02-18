@@ -1,6 +1,8 @@
 # JB Gateway: Remote Development & AI Agent Sandbox
 
-A secure, Docker-based environment for remote development and sandboxing AI agents. This gateway provides a controlled workspace with your projects directory mounted inside, specifically designed to limit the blast radius of AI agents and protect your host system.
+A secure, Docker-based environment for remote development and sandboxing AI agents. This gateway provides a controlled
+workspace with your projects directory mounted inside, specifically designed to limit the blast radius of AI agents and
+protect your host system.
 
 ![JB Gateway architecture](.assets/architecture.png)
 
@@ -19,7 +21,8 @@ curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/main/install.sh | 
 
 > [!TIP]
 > **Custom Branch**: To install from a specific branch:
-> `curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/<branch>/install.sh | JBG_BRANCH=<branch> bash -s -- --mode=both`
+>
+`curl -fsSL https://raw.githubusercontent.com/asubb/jb-gateway/<branch>/install.sh | JBG_BRANCH=<branch> bash -s -- --mode=both`
 
 ### 2. Start the Server
 
@@ -30,9 +33,9 @@ jbg server start
 
 ### 3. Connect
 
-*   **SSH**: `ssh -p 1022 jb-gateway@localhost` (Password: `password`)
-*   **JetBrains Gateway**: Connect via SSH to `localhost:1022`.
-*   **Web Browser (noVNC)**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html)
+* **SSH**: `ssh -p 1022 jb-gateway@localhost` (Password: `password`)
+* **JetBrains Gateway**: Connect via SSH to `localhost:1022`.
+* **Web Browser (noVNC)**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html)
 
 ---
 
@@ -54,6 +57,7 @@ The `jbg` tool is the main interface for managing your gateway:
 - `jbg client [status|proxy|help]`: Manage client connections and tunnels.
 
 ### Server Commands
+
 - `jbg server start`: Start the jb-gateway container
 - `jbg server stop`: Stop the jb-gateway container
 - `jbg server build`: Build the Docker image
@@ -61,16 +65,21 @@ The `jbg` tool is the main interface for managing your gateway:
 - `jbg server help`: Show server command help
 
 ### Client Commands
+
 - `jbg client status`: Show status of all client subsystems
 - `jbg client proxy start`: Start proxy tunnels
 - `jbg client proxy stop`: Stop proxy tunnels
 - `jbg client help`: Show client command help
+
+**Profile Support**: All client commands support an optional `--profile <name>` flag for managing multiple isolated
+development environments. See [Profile Support](docs/profiles.md) for details.
 
 ## Advanced Topics & Documentation
 
 For detailed guides and configuration, see the `docs/` directory:
 
 - [Container Configuration](docs/configuration.md) - Customizing `host.env` and mounts.
+- [Profile Support](docs/profiles.md) - Managing multiple isolated development environments.
 - [SDK Management](docs/sdk-management.md) - Using SDKMAN! for Java, Gradle, etc.
 - [Docker-in-Docker](docs/docker-in-docker.md) - Accessing host Docker and services.
 - [OpenSpec Workflow](docs/openspec.md) - AI-driven development with Claude.
@@ -86,7 +95,8 @@ For detailed guides and configuration, see the `docs/` directory:
 
 ## Security Note
 
-This container is intended for development and sandboxing. It is not secured for production use. Default credentials are `jb-gateway:password`.
+This container is intended for development and sandboxing. It is not secured for production use. Default credentials are
+`jb-gateway:password`.
 
 ## Troubleshooting
 

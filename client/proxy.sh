@@ -46,16 +46,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-# Directory for storing PID files
-PID_DIR="$HOME/.jb-gateway/proxy"
-mkdir -p "$PID_DIR"
-
-# Directory for storing log files
-LOG_DIR="$HOME/.jb-gateway/logs"
-mkdir -p "$LOG_DIR"
-
-# Directory for storing monitor PID
-MONITOR_PID_FILE="$PID_DIR/monitor.pid"
+# Profile support
+PROFILE=""
 
 # Default values
 SSH_PORT=1022
@@ -65,10 +57,58 @@ SSH_PASSWORD=""
 AUTO_REFRESH=false
 REFRESH_INTERVAL=60  # seconds
 
+# Function to initialize profile directory
+init_profile_dir() {
+    local profile_name="$1"
+    local profile_dir="$HOME/.jb-gateway/profiles/$profile_name"
+
+    if [ ! -d "$profile_dir" ]; then
+        echo "Initializing profile directory: $profile_dir"
+        mkdir -p "$profile_dir"/{ssh,state,logs,secrets}
+        chmod 700 "$profile_dir"
+        chmod 700 "$profile_dir/secrets"
+    fi
+
+    echo "$profile_dir"
+}
+
+# Parse command line arguments first to get profile
+TEMP_ARGS=("$@")
+for ((i=0; i<${#TEMP_ARGS[@]}; i++)); do
+    if [[ "${TEMP_ARGS[i]}" == "--profile" ]]; then
+        if [[ $((i+1)) -lt ${#TEMP_ARGS[@]} ]]; then
+            PROFILE="${TEMP_ARGS[$((i+1))]}"
+        fi
+        break
+    fi
+done
+
+# Resolve config directory based on profile
+if [[ -n "$PROFILE" ]]; then
+    CONFIG_DIR=$(init_profile_dir "$PROFILE")
+    ENV_FILE="$CONFIG_DIR/.env"
+    # Profile-specific paths
+    PID_DIR="$CONFIG_DIR/state"
+    LOG_DIR="$CONFIG_DIR/logs"
+else
+    CONFIG_DIR="$HOME/.jb-gateway"
+    ENV_FILE="$(dirname "$0")/.env"
+    # Default paths (backward compatibility)
+    PID_DIR="$HOME/.jb-gateway/proxy"
+    LOG_DIR="$HOME/.jb-gateway/logs"
+fi
+
+# Ensure directories exist
+mkdir -p "$PID_DIR"
+mkdir -p "$LOG_DIR"
+
+# Directory for storing monitor PID
+MONITOR_PID_FILE="$PID_DIR/monitor.pid"
+
 # Load environment variables from .env file if it exists
-if [ -f "$(dirname "$0")/.env" ]; then
+if [ -f "$ENV_FILE" ]; then
     echo "Loading configuration from .env file..."
-    source "$(dirname "$0")/.env"
+    source "$ENV_FILE"
 
     # Override defaults with values from .env if they exist
     [ ! -z "$SSH_PORT" ] && SSH_PORT="$SSH_PORT"
@@ -78,6 +118,17 @@ if [ -f "$(dirname "$0")/.env" ]; then
     [ ! -z "$AUTO_REFRESH" ] && AUTO_REFRESH="$AUTO_REFRESH"
     [ ! -z "$REFRESH_INTERVAL" ] && REFRESH_INTERVAL="$REFRESH_INTERVAL"
     # PROXY_DESTINATIONS is loaded from .env via source command above
+elif [ -z "$PROFILE" ] && [ -f "$(dirname "$0")/.env" ]; then
+    # Fallback to script directory .env for default (no-profile) case
+    echo "Loading configuration from .env file..."
+    source "$(dirname "$0")/.env"
+
+    [ ! -z "$SSH_PORT" ] && SSH_PORT="$SSH_PORT"
+    [ ! -z "$SSH_USER" ] && SSH_USER="$SSH_USER"
+    [ ! -z "$SSH_HOST" ] && SSH_HOST="$SSH_HOST"
+    [ ! -z "$SSH_PASSWORD" ] && SSH_PASSWORD="$SSH_PASSWORD"
+    [ ! -z "$AUTO_REFRESH" ] && AUTO_REFRESH="$AUTO_REFRESH"
+    [ ! -z "$REFRESH_INTERVAL" ] && REFRESH_INTERVAL="$REFRESH_INTERVAL"
 fi
 
 # Help message
@@ -91,6 +142,7 @@ function show_help {
     echo "  -w, --password PASS      SSH password for jb-gateway container (default: from .env or none)"
     echo "  -a, --auto-refresh       Automatically refresh tunnels every minute to ensure they stay up"
     echo "  -i, --interval SECONDS   Refresh interval in seconds (default: 60, only works with -a)"
+    echo "  --profile NAME           Use profile-specific configuration directory"
     echo "  -h, --help               Show this help message"
     echo ""
     echo "Environment variables (set in .env file):"
@@ -132,6 +184,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -i|--interval)
             REFRESH_INTERVAL="$2"
+            shift 2
+            ;;
+        --profile)
+            # Already parsed above, just skip
             shift 2
             ;;
         -h|--help)
@@ -247,7 +303,12 @@ start_tunnel() {
     fi
 
     # Check if a tunnel is already running for this port
-    local pid_file="$PID_DIR/proxy_$port.pid"
+    # Use tunnel_PORT.pid for profiles, proxy_PORT.pid for default (backward compatibility)
+    if [[ -n "$PROFILE" ]]; then
+        local pid_file="$PID_DIR/tunnel_$port.pid"
+    else
+        local pid_file="$PID_DIR/proxy_$port.pid"
+    fi
     if [ -f "$pid_file" ]; then
         local pid=$(cat "$pid_file")
         if ps -p "$pid" > /dev/null 2>&1; then
@@ -292,9 +353,13 @@ start_tunnel() {
 
     # Save the PID
     local pid=$!
-    echo "$pid" > "$PID_DIR/proxy_$port.pid"
-    # Save the log file path in a companion file for reference
-    echo "$tunnel_log_file" > "$PID_DIR/proxy_${port}_log.txt"
+    if [[ -n "$PROFILE" ]]; then
+        echo "$pid" > "$PID_DIR/tunnel_$port.pid"
+        echo "$tunnel_log_file" > "$PID_DIR/tunnel_${port}_log.txt"
+    else
+        echo "$pid" > "$PID_DIR/proxy_$port.pid"
+        echo "$tunnel_log_file" > "$PID_DIR/proxy_${port}_log.txt"
+    fi
     echo -e "${GREEN}Port $port: Tunnel started (PID: $pid)${NC}"
 }
 
@@ -304,7 +369,11 @@ check_tunnels() {
     echo -e "${GREEN}[$timestamp] Checking tunnel status...${NC}"
 
     # Get all PID files except monitor.pid
-    local pid_files=$(find "$PID_DIR" -name "proxy_*.pid" 2>/dev/null)
+    if [[ -n "$PROFILE" ]]; then
+        local pid_files=$(find "$PID_DIR" -name "tunnel_*.pid" 2>/dev/null)
+    else
+        local pid_files=$(find "$PID_DIR" -name "proxy_*.pid" 2>/dev/null)
+    fi
 
     if [ -z "$pid_files" ]; then
         echo -e "${YELLOW}[$timestamp] No tunnels configured.${NC}"
@@ -314,7 +383,11 @@ check_tunnels() {
     # Process each PID file
     for pid_file in $pid_files; do
         # Extract port number from filename
-        local port=$(basename "$pid_file" | sed 's/proxy_\([0-9]*\)\.pid/\1/')
+        if [[ -n "$PROFILE" ]]; then
+            local port=$(basename "$pid_file" | sed 's/tunnel_\([0-9]*\)\.pid/\1/')
+        else
+            local port=$(basename "$pid_file" | sed 's/proxy_\([0-9]*\)\.pid/\1/')
+        fi
 
         # Read PID from file
         if [ -f "$pid_file" ]; then
