@@ -646,7 +646,7 @@ cmd_client() {
     case "$subcommand" in
         status)
             if [[ -f "$INSTALL_DIR/client/status.sh" ]]; then
-                "$INSTALL_DIR/client/status.sh"
+                "$INSTALL_DIR/client/status.sh" "$@"
             else
                 echo "Error: client/status.sh not found"
                 echo "Please ensure client mode is installed: jbg update"
@@ -655,7 +655,7 @@ cmd_client() {
             ;;
         config)
             if [[ -f "$INSTALL_DIR/client/config.sh" ]]; then
-                "$INSTALL_DIR/client/config.sh"
+                "$INSTALL_DIR/client/config.sh" "$@"
             else
                 echo "Error: client/config.sh not found"
                 echo "Please ensure client mode is installed: jbg update"
@@ -664,10 +664,11 @@ cmd_client() {
             ;;
         proxy)
             local action="${1:-start}"
+            shift || true
             case "$action" in
                 start)
                     if [[ -f "$INSTALL_DIR/client/proxy.sh" ]]; then
-                        "$INSTALL_DIR/client/proxy.sh"
+                        "$INSTALL_DIR/client/proxy.sh" "$@"
                     else
                         echo "Error: client/proxy.sh not found"
                         echo "Please ensure client mode is installed: jbg update"
@@ -676,7 +677,7 @@ cmd_client() {
                     ;;
                 stop)
                     if [[ -f "$INSTALL_DIR/client/proxy-stop.sh" ]]; then
-                        "$INSTALL_DIR/client/proxy-stop.sh"
+                        "$INSTALL_DIR/client/proxy-stop.sh" "$@"
                     else
                         echo "Error: client/proxy-stop.sh not found"
                         echo "Please ensure client mode is installed: jbg update"
