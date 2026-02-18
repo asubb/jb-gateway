@@ -130,6 +130,7 @@ echo "Using projects directory: $PROJECTS_DIR"
 docker run -it -d --name jb-gateway \
   -v ~/.jb-gateway/.ssh:/home/jb-gateway/.ssh/ \
   -v ~/.jb-gateway/.config:/home/jb-gateway/.config/ \
+  -v ~/.jb-gateway/.gitconfig:/home/jb-gateway/.gitconfig \
   -v jb-gateway-cache:/home/jb-gateway/.cache \
   -v ~/.jb-gateway/.java:/home/jb-gateway/.java/ \
   -v ~/.jb-gateway/.local:/home/jb-gateway/.local/ \
