@@ -484,6 +484,16 @@ Client Subcommands:
     jbg client proxy stop    Stop proxy tunnels
     jbg client config        Show client configuration and file locations
 
+Profile Support:
+    All client commands support the --profile flag to manage isolated environments.
+
+    Usage: jbg client <subcommand> --profile <name> [other options]
+
+    Examples:
+        jbg client proxy start --profile dev
+        jbg client status --profile staging
+        jbg client config --profile production
+
 Examples:
     jbg update               Update to latest version
     jbg server start         Start server components
