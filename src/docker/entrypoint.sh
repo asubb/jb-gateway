@@ -45,8 +45,9 @@ chown -R jb-gateway:jb-gateway /home/jb-gateway/.ssh/
 chmod 600 /home/jb-gateway/.ssh/config
 
 # Create a script to set environment variables for jb-gateway user
+mkdir -p /home/jb-gateway/.config
+touch /home/jb-gateway/.config/container_env_vars
 # TODO that doesn't work for some reason
-#mkdir -p /home/jb-gateway/.config
 #env | grep -v "PATH\|HOME\|USER\|SHELL\|PWD\|LOGNAME\|_\|TERM\|SHLVL\|HOSTNAME\|SSH_\|MAIL\|LANG\|LANGUAGE\|LC_" > /home/jb-gateway/.config/container_env_vars
 #sed -i 's/^/export /' /home/jb-gateway/.config/container_env_vars
 
