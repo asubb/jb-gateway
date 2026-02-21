@@ -134,6 +134,7 @@ docker run -d --name jb-gateway \
   -v ~/.jb-gateway/.java:/home/jb-gateway/.java/ \
   -v ~/.jb-gateway/.local:/home/jb-gateway/.local/ \
   -v ~/.jb-gateway/.gradle:/home/jb-gateway/.gradle/ \
+  -v ~/.jb-gateway/.m2:/home/jb-gateway/.m2/ \
   -v ~/.jb-gateway/.jdks:/home/jb-gateway/.jdks/ \
   -v ~/.jb-gateway/.sdkman/candidates:/home/jb-gateway/.sdkman/candidates \
   -v "$PROJECTS_DIR":"$CONTAINER_PROJECTS_PATH" \
